@@ -1,0 +1,29 @@
+﻿@model List<PharmMgtSys.Models.StockReportViewModel>
+@{
+    ViewBag.Title = "StockReport";
+}
+
+<h2>StockReport</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Medication Name</th>
+            <th>Quantity in Stock</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.MedicationName</td>
+                    <td>@item.QuantityInStock</td>
+                </tr>
+            }
+    </tbody>
+
+</table>
+
+<p>
+    @Html.ActionLink("Back to Home", "Index", "Home", null, new { @class = "btn btn-primary"})
+</p>
