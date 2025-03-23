@@ -11,6 +11,7 @@ using PharmMgtSys.Models;
 
 namespace PharmMgtSys.Controllers
 {
+    [Authorize(Roles = "Pharmacist, Admin")]
     public class PurchasesController : Controller
     {
         private PharmacyContext db = new PharmacyContext();
@@ -68,6 +69,7 @@ namespace PharmMgtSys.Controllers
             }
 
             ViewBag.MedicationID = new SelectList(db.Medications, "MedicatinID", "Name", purchase.MedicationID);
+            var medications = await db.Medications.ToListAsync();
             return View(purchase);
         }
 

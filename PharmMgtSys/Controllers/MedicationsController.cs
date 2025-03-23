@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
@@ -11,6 +12,7 @@ using PharmMgtSys.Models;
 
 namespace PharmMgtSys.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class MedicationsController : Controller
     {
         private PharmacyContext db = new PharmacyContext();

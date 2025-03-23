@@ -1,11 +1,17 @@
 ﻿@model List<PharmMgtSys.Models.StockReportViewModel>
+
 @{
-    ViewBag.Title = "StockReport";
+    ViewBag.Title = "Stock Report";
 }
 
-<h2>StockReport</h2>
+<h3>Stock Report</h3>
 
-<table class="table table-bordered">
+<div class="mb-3">
+    @Html.ActionLink("Export to PDF", "ExportStockReportToPdf", "Reports", null, new { @class = "btn btn-primary" })
+    @Html.ActionLink("Export to Excel", "ExportStockReportToExcel", "Reports", null, new { @class = "btn btn-success" })
+</div>
+
+<table id="myTable" class="table table-bordered">
     <thead>
         <tr>
             <th>Medication Name</th>
@@ -14,16 +20,17 @@
     </thead>
     <tbody>
         @foreach (var item in Model)
-            {
-                <tr>
-                    <td>@item.MedicationName</td>
-                    <td>@item.QuantityInStock</td>
-                </tr>
-            }
+        {
+            <tr>
+                <td>@item.MedicationName</td>
+                <td>@item.QuantityInStock</td>
+            </tr>
+        }
     </tbody>
-
+    <tfoot>
+        <tr></tr>
+    </tfoot>
 </table>
 
-<p>
-    @Html.ActionLink("Back to Home", "Index", "Home", null, new { @class = "btn btn-primary"})
-</p>
+
+<p>@Html.ActionLink("Back to Home", "Index", "Home", null, new { @class = "btn btn-primary" })</p>

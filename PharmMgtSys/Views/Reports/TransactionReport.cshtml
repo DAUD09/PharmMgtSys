@@ -1,12 +1,14 @@
 ﻿@model List<PharmMgtSys.Models.TransactionReportViewModel>
+@using PharmMgtSys.Models
+
 @{
-    ViewBag.Title = "TransactionReport";
-    var filter = ViewBag.Filter as PharmMgtSys.Models.TransactionReportFilterViewModel;
+    ViewBag.Title = "Transaction Report";
+    var filter = ViewBag.Filter as TransactionReportFilterViewModel;
 }
 
-<h2>TransactionReport</h2>
+<h2>Transaction Report</h2>
 
-@*Filter Form*@
+<!-- Filter Form -->
 @using (Html.BeginForm("TransactionReport", "Reports", FormMethod.Get))
 {
     <div class="form-group">
@@ -18,11 +20,16 @@
         @Html.TextBoxFor(m => filter.EndDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
     </div>
     <button type="submit" class="btn btn-primary">Filter</button>
-
 }
 
+<!-- Export Buttons -->
+<div class="mt-3 mb-3">
+    @Html.ActionLink("Export to PDF", "ExportTransactionReportToPdf", "Reports", new { StartDate = filter.StartDate, EndDate = filter.EndDate }, new { @class = "btn btn-primary" })
+    @Html.ActionLink("Export to Excel", "ExportTransactionReportToExcel", "Reports", new { StartDate = filter.StartDate, EndDate = filter.EndDate }, new { @class = "btn btn-success" })
+</div>
+
 <!-- Report Table -->
-<table class="table table-bordered mt-3">
+<table id="myTable" class="table table-bordered mt-3">
     <thead>
         <tr>
             <th>Date</th>
@@ -39,14 +46,19 @@
                 <td>@item.Date.ToString("yyyy-MM-dd HH:mm")</td>
                 <td>@item.TransactionType</td>
                 <td>@item.MedicationName</td>
-                <td>@item.Quantiity</td>
+                <td>@item.Quantity</td>
                 <td>@(item.Price.HasValue ? item.Price.Value.ToString("C") : "N/A")</td>
             </tr>
         }
     </tbody>
+
 </table>
 
-<p>
-    @Html.ActionLink("Back to Home", "Index", "Home", null, new { @class = "btn btn-primary" })
-</p>
+<!-- Summary Totals -->
+<div class="mt-3">
+    <p><strong>Total Purchased:</strong> @Model.Where(t => t.TransactionType == "Purchase").Sum(t => t.Quantity)</p>
+    <p><strong>Total Sold:</strong> @Model.Where(t => t.TransactionType == "Sale").Sum(t => t.Quantity)</p>
+    <p><strong>Total Revenue:</strong> @Model.Where(t => t.TransactionType == "Sale").Sum(t => t.Price ?? 0).ToString("C")</p>
+</div>
 
+<p>@Html.ActionLink("Back to Home", "Index", "Home", null, new { @class = "btn btn-primary" })</p>

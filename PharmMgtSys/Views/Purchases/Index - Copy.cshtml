@@ -1,0 +1,52 @@
+﻿@model IEnumerable<PharmMgtSys.Models.Purchase>
+
+@{
+    ViewBag.Title = "Purchases";
+}
+
+<h3>Purchases</h3>
+
+<p>
+    @Html.ActionLink("Add Purchase", "Create")
+</p>
+<table id="myTable" class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Medication.Name)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.PurchaseDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Quantity)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Medication.Name)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.PurchaseDate)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Quantity)
+                </td>
+                <td>
+                    @Html.ActionLink("Edit", "Edit", new { id = item.PurchaseID }) |
+                    @Html.ActionLink("Details", "Details", new { id = item.PurchaseID }) |
+                    @Html.ActionLink("Delete", "Delete", new { id = item.PurchaseID })
+                </td>
+            </tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr></tr>
+    </tfoot>
+</table>

@@ -12,6 +12,7 @@ using System.Net.Http.Headers;
 
 namespace PharmMgtSys.Controllers
 {
+    [Authorize(Roles = "Pharmacist, Admin")]
     public class SalesController : Controller
     {
         private PharmacyContext db = new PharmacyContext();
@@ -64,7 +65,7 @@ namespace PharmMgtSys.Controllers
                 }
 
                 sale.SaleDate = DateTime.Now; // Set current date
-                sale.Price = medication.Price; // Set price from medication
+                /*sale.Price = medication.Price;*/ // Set price from medication
                 db.Sales.Add(sale);
 
                 // Decrease stock
@@ -75,6 +76,7 @@ namespace PharmMgtSys.Controllers
             }
 
             ViewBag.MedicationID = new SelectList(db.Medications, "MedicatinID", "Name", sale.MedicationID);
+            var medications = await db.Medications.ToListAsync();
             return View(sale);
         }
 

@@ -15,6 +15,7 @@ namespace PharmMgtSys.Models
 		[Range(0, double.MaxValue)]
 		public decimal Price { get; set; }
 
+		[Display(Name = "Quantity In Stock")]
 		[Range(0, int.MaxValue)]
 		public int QuantityInStock { get; set; }
 	}

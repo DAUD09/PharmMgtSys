@@ -73,9 +73,20 @@ namespace PharmMgtSys.Controllers
                 return View(model);
             }
 
-            // This doesn't count login failures towards account lockout
-            // To enable password failures to trigger account lockout, change to shouldLockout: true
-            var result = await SignInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, shouldLockout: false);
+            var user = await UserManager.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                System.Diagnostics.Debug.WriteLine("User not found: " + model.Email);
+                ModelState.AddModelError("", "Invalid login attempt.");
+                return View(model);
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("User found: " + user.UserName);
+            }
+
+            // Use user.UserName instead of model.Email
+            var result = await SignInManager.PasswordSignInAsync(user.UserName, model.Password, model.RememberMe, shouldLockout: false);
             switch (result)
             {
                 case SignInStatus.Success:
@@ -155,6 +166,7 @@ namespace PharmMgtSys.Controllers
                 var result = await UserManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
+                    UserManager.AddToRole(user.Id, "Pharmacist"); // Default to Pharmacist
                     await SignInManager.SignInAsync(user, isPersistent:false, rememberBrowser:false);
                     
                     // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=320771
@@ -262,6 +274,26 @@ namespace PharmMgtSys.Controllers
             AddErrors(result);
             return View();
         }
+
+        //
+        // Temporary Reset Admin Password
+        //[AllowAnonymous]
+        //public async Task<ActionResult> ResetAdminPassword()
+        //{
+        //    var user = await UserManager.FindByEmailAsync("admin@example.com");
+        //    if (user != null)
+        //    {
+        //        var token = await UserManager.GeneratePasswordResetTokenAsync(user.Id);
+        //        var result = await UserManager.ResetPasswordAsync(user.Id, token, "AdminPassword123!");
+        //        if (result.Succeeded)
+        //        {
+        //            System.Diagnostics.Debug.WriteLine("Password reset successfully");
+        //            return Content("Password reset to AdminPassword123!");
+        //        }
+        //        return Content("Failed: " + string.Join(", ", result.Errors));
+        //    }
+        //    return Content("User not found");
+        //}
 
         //
         // GET: /Account/ResetPasswordConfirmation

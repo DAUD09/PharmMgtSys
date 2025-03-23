@@ -11,6 +11,7 @@ namespace PharmMgtSys.Models
 		[Key]
 		public int SaleID { get; set; }
 
+		[Display(Name = "Sale Date")]
 		[DataType(DataType.Date)]
 		public DateTime SaleDate { get; set; }
 

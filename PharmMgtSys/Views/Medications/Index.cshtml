@@ -1,45 +1,56 @@
 ﻿@model IEnumerable<PharmMgtSys.Models.Medication>
-
 @{
-    ViewBag.Title = "Medication";
+    ViewBag.Title = "Medications";
 }
 
-<h3>Medication</h3>
+<h2>Medications</h2>
 
-<p>
-    @Html.ActionLink("Add Medication", "Create")
-</p>
-<table class="table">
-    <tr>
-        <th>
-            @Html.DisplayNameFor(model => model.Name)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Price)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.QuantityInStock)
-        </th>
-        <th></th>
-    </tr>
-
-@foreach (var item in Model) {
-    <tr>
-        <td>
-            @Html.DisplayFor(modelItem => item.Name)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Price)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.QuantityInStock)
-        </td>
-        <td>
-            @Html.ActionLink("Edit", "Edit", new { id=item.MedicatinID }) |
-            @Html.ActionLink("Details", "Details", new { id=item.MedicatinID }) |
-            @Html.ActionLink("Delete", "Delete", new { id=item.MedicatinID })
-        </td>
-    </tr>
-}
-
-</table>
+@(Html.DevExtreme().DataGrid<PharmMgtSys.Models.Medication>()
+    .ID("medicationsGrid") // Unique ID for reference
+    .DataSource(ds => ds.WebApi()
+        .RouteName("MedicationsWebApi")
+        .LoadAction("Get")
+        .InsertAction("Post")
+        .UpdateAction("Put")
+        .DeleteAction("Delete")
+        .Key("MedicatinID") // Matches your model's primary key
+    )
+    .Columns(columns =>
+    {
+        columns.AddFor(m => m.MedicatinID)
+            .Width(100) // Fixed width for better layout
+            .Caption("ID"); // Custom header
+        columns.AddFor(m => m.Name)
+            .Width(200)
+            .Caption("Medication Name")
+            .CellTemplate(@<text><strong><% if (data.Name) { %><%= data.Name %><% } %></strong></text>); // Bold text
+        columns.AddFor(m => m.Price)
+            .Format("currency") // Displays as $X.XX
+            .Width(120)
+            .Caption("Unit Price");
+        columns.AddFor(m => m.QuantityInStock)
+            .Width(150)
+            .Caption("Stock")
+            .CssClass("stock-column"); // Custom CSS for styling
+    })
+    .ShowBorders(true) // Adds borders for a clean look
+    .ShowRowLines(true) // Row separators
+    .RowAlternationEnabled(true) // Alternating row colors
+    .HoverStateEnabled(true) // Highlights rows on hover
+    .ColumnAutoWidth(false) // Fixed widths for consistency
+    .WordWrapEnabled(true) // Wraps long text
+    .HeaderFilter(hf => hf.Visible(true)) // Filter dropdowns in headers
+    .FilterRow(fr => fr.Visible(true)) // Inline filtering
+    .SearchPanel(sp => sp
+        .Visible(true)
+        .Width(240)
+        .Placeholder("Search Medications...")
+    )
+    .Paging(p => p.PageSize(10)) // 10 rows per page
+    .Pager(p => p
+        .ShowPageSizeSelector(true)
+        .AllowedPageSizes(new[] { 5, 10, 20 })
+        .ShowInfo(true)
+    )
+    .RemoteOperations(true) // Server-side operations
+)

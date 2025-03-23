@@ -11,7 +11,7 @@ namespace PharmMgtSys.Models
 
 		public string MedicationName { get; set; }
 
-		public int Quantiity { get; set; }
+		public int Quantity { get; set; }
 
 		public decimal? Price { get; set; } // Nullable, only for sales
 	}

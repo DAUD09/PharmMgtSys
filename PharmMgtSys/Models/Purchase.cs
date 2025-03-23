@@ -10,6 +10,7 @@ namespace PharmMgtSys.Models
 		[Key]
 		public int PurchaseID { get; set; }
 
+		[Display(Name = "Purchase Date")]
 		[DataType(DataType.Date)]
 		public DateTime PurchaseDate { get; set; }
 

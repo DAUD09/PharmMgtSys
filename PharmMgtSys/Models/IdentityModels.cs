@@ -29,5 +29,6 @@ namespace PharmMgtSys.Models
         {
             return new ApplicationDbContext();
         }
+
     }
 }
