@@ -16,38 +16,36 @@ using System.Web.Http.ModelBinding;
 using PharmMgtSys.Models;
 
 namespace PharmMgtSys.Controllers
-
 {
-    [Authorize(Roles = "Admin")]
-
-    [Route("api/MedicationsWebApi/{action}", Name = "MedicationsWebApi")]
-    public class MedicationsWebApiController : ApiController
+    [Route("api/AuditLogsWeb/{action}", Name = "AuditLogsWebApi")]
+    public class AuditLogsWebApiController : ApiController
     {
-
         private ApplicationDbContext _context = new ApplicationDbContext();
 
         [HttpGet]
         public async Task<HttpResponseMessage> Get(DataSourceLoadOptions loadOptions) {
-            var medications = _context.Medications.Select(i => new {
-                i.MedicationID,
-                i.Name,
-                i.Price,
-                i.QuantityInStock,
-                i.ReorderLevel
+            var auditlogs = _context.AuditLogs.Select(i => new {
+                i.Id,
+                i.UserId,
+                i.Action,
+                i.EntityName,
+                i.EntityId,
+                i.Timestamp,
+                i.Details
             });
 
             // If underlying data is a large SQL table, specify PrimaryKey and PaginateViaPrimaryKey.
             // This can make SQL execution plans more efficient.
             // For more detailed information, please refer to this discussion: https://github.com/DevExpress/DevExtreme.AspNet.Data/issues/336.
-            // loadOptions.PrimaryKey = new[] { "MedicationID" };
+            // loadOptions.PrimaryKey = new[] { "Id" };
             // loadOptions.PaginateViaPrimaryKey = true;
 
-            return Request.CreateResponse(await DataSourceLoader.LoadAsync(medications, loadOptions));
+            return Request.CreateResponse(await DataSourceLoader.LoadAsync(auditlogs, loadOptions));
         }
 
         [HttpPost]
         public async Task<HttpResponseMessage> Post(FormDataCollection form) {
-            var model = new Medication();
+            var model = new AuditLog();
             var values = JsonConvert.DeserializeObject<IDictionary>(form.Get("values"));
             PopulateModel(model, values);
 
@@ -55,16 +53,16 @@ namespace PharmMgtSys.Controllers
             if (!ModelState.IsValid)
                 return Request.CreateErrorResponse(HttpStatusCode.BadRequest, GetFullErrorMessage(ModelState));
 
-            var result = _context.Medications.Add(model);
+            var result = _context.AuditLogs.Add(model);
             await _context.SaveChangesAsync();
 
-            return Request.CreateResponse(HttpStatusCode.Created, new { result.MedicationID });
+            return Request.CreateResponse(HttpStatusCode.Created, new { result.Id });
         }
 
         [HttpPut]
         public async Task<HttpResponseMessage> Put(FormDataCollection form) {
             var key = Convert.ToInt32(form.Get("key"));
-            var model = await _context.Medications.FirstOrDefaultAsync(item => item.MedicationID == key);
+            var model = await _context.AuditLogs.FirstOrDefaultAsync(item => item.Id == key);
             if(model == null)
                 return Request.CreateResponse(HttpStatusCode.Conflict, "Object not found");
 
@@ -83,38 +81,48 @@ namespace PharmMgtSys.Controllers
         [HttpDelete]
         public async Task Delete(FormDataCollection form) {
             var key = Convert.ToInt32(form.Get("key"));
-            var model = await _context.Medications.FirstOrDefaultAsync(item => item.MedicationID == key);
+            var model = await _context.AuditLogs.FirstOrDefaultAsync(item => item.Id == key);
 
-            _context.Medications.Remove(model);
+            _context.AuditLogs.Remove(model);
             await _context.SaveChangesAsync();
         }
 
 
-        private void PopulateModel(Medication model, IDictionary values) {
-            string MEDICATION_ID = nameof(Medication.MedicationID);
-            string NAME = nameof(Medication.Name);
-            string PRICE = nameof(Medication.Price);
-            string QUANTITY_IN_STOCK = nameof(Medication.QuantityInStock);
-            string REORDER_LEVEL = nameof(Medication.ReorderLevel);
+        private void PopulateModel(AuditLog model, IDictionary values) {
+            string ID = nameof(AuditLog.Id);
+            string USER_ID = nameof(AuditLog.UserId);
+            string ACTION = nameof(AuditLog.Action);
+            string ENTITY_NAME = nameof(AuditLog.EntityName);
+            string ENTITY_ID = nameof(AuditLog.EntityId);
+            string TIMESTAMP = nameof(AuditLog.Timestamp);
+            string DETAILS = nameof(AuditLog.Details);
 
-            if(values.Contains(MEDICATION_ID)) {
-                model.MedicationID = Convert.ToInt32(values[MEDICATION_ID]);
+            if(values.Contains(ID)) {
+                model.Id = Convert.ToInt32(values[ID]);
             }
 
-            if(values.Contains(NAME)) {
-                model.Name = Convert.ToString(values[NAME]);
+            if(values.Contains(USER_ID)) {
+                model.UserId = Convert.ToString(values[USER_ID]);
             }
 
-            if(values.Contains(PRICE)) {
-                model.Price = Convert.ToDecimal(values[PRICE], CultureInfo.InvariantCulture);
+            if(values.Contains(ACTION)) {
+                model.Action = Convert.ToString(values[ACTION]);
             }
 
-            if(values.Contains(QUANTITY_IN_STOCK)) {
-                model.QuantityInStock = Convert.ToInt32(values[QUANTITY_IN_STOCK]);
+            if(values.Contains(ENTITY_NAME)) {
+                model.EntityName = Convert.ToString(values[ENTITY_NAME]);
             }
 
-            if(values.Contains(REORDER_LEVEL)) {
-                model.ReorderLevel = Convert.ToInt32(values[REORDER_LEVEL]);
+            if(values.Contains(ENTITY_ID)) {
+                model.EntityId = Convert.ToString(values[ENTITY_ID]);
+            }
+
+            if(values.Contains(TIMESTAMP)) {
+                model.Timestamp = Convert.ToDateTime(values[TIMESTAMP]);
+            }
+
+            if(values.Contains(DETAILS)) {
+                model.Details = Convert.ToString(values[DETAILS]);
             }
         }
 

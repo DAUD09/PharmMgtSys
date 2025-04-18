@@ -1,0 +1,49 @@
+﻿@model IEnumerable<PharmMgtSys.Models.AuditLog>
+@{
+    ViewBag.Title = "Audit Logs";
+    Layout = "~/Views/Shared/_Layout.cshtml"; 
+}
+
+<h2>Audit Logs</h2>
+
+@(Html.DevExtreme().DataGrid<PharmMgtSys.Models.AuditLog>
+    ()
+    .DataSource(ds => ds.WebApi()
+    .RouteName("AuditLogsWebApi")
+    .LoadAction("Get")
+    .Key("Id")
+    )
+    .RemoteOperations(true)
+    .ColumnHidingEnabled(true)
+    .Sorting(d => d.Mode(GridSortingMode.Single))
+    .AllowColumnReordering(true)
+    .AllowColumnResizing(true)
+    .GroupPanel(g => g.Visible(true))
+    .ColumnChooser(f => f.Enabled(true).Mode(GridColumnChooserMode.Select))
+    .ShowBorders(true)
+    .HeaderFilter(h => h.Visible(true))
+    .FocusedRowEnabled(true)
+    .ShowColumnLines(true)
+    .Columns(columns => {
+
+    columns.AddFor(m => m.Id);
+
+    columns.AddFor(m => m.UserId);
+
+    columns.AddFor(m => m.Action);
+
+    columns.AddFor(m => m.EntityName);
+
+    columns.AddFor(m => m.EntityId);
+
+    columns.AddFor(m => m.Timestamp);
+
+    columns.AddFor(m => m.Details);
+    })
+    .Editing(e => e
+    .AllowAdding(false)
+    .AllowUpdating(false)
+    .AllowDeleting(false)
+    .Mode(GridEditMode.Popup)
+    .Popup(p => p.Title("Audit Info").ShowTitle(true))
+    ))

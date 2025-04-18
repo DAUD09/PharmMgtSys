@@ -15,7 +15,7 @@ namespace PharmMgtSys.Controllers
     [Authorize(Roles = "Pharmacist, Admin")]
     public class SalesController : Controller
     {
-        private PharmacyContext db = new PharmacyContext();
+        private ApplicationDbContext db = new ApplicationDbContext();
 
         // GET: Sales
         public async Task<ActionResult> Index()
@@ -42,7 +42,7 @@ namespace PharmMgtSys.Controllers
         // GET: Sales/Create
         public ActionResult Create()
         {
-            ViewBag.MedicationID = new SelectList(db.Medications, "MedicatinID", "Name");
+            ViewBag.MedicationID = new SelectList(db.Medications, "MedicationID", "Name");
             return View();
         }
 
@@ -75,7 +75,7 @@ namespace PharmMgtSys.Controllers
                 return RedirectToAction("Index");
             }
 
-            ViewBag.MedicationID = new SelectList(db.Medications, "MedicatinID", "Name", sale.MedicationID);
+            ViewBag.MedicationID = new SelectList(db.Medications, "MedicationID", "Name", sale.MedicationID);
             var medications = await db.Medications.ToListAsync();
             return View(sale);
         }
@@ -92,7 +92,7 @@ namespace PharmMgtSys.Controllers
             {
                 return HttpNotFound();
             }
-            ViewBag.MedicationID = new SelectList(db.Medications, "MedicatinID", "Name", sale.MedicationID);
+            ViewBag.MedicationID = new SelectList(db.Medications, "MedicationID", "Name", sale.MedicationID);
             return View(sale);
         }
 
@@ -109,7 +109,7 @@ namespace PharmMgtSys.Controllers
                 await db.SaveChangesAsync();
                 return RedirectToAction("Index");
             }
-            ViewBag.MedicationID = new SelectList(db.Medications, "MedicatinID", "Name", sale.MedicationID);
+            ViewBag.MedicationID = new SelectList(db.Medications, "MedicationID", "Name", sale.MedicationID);
             return View(sale);
         }
 

@@ -14,7 +14,7 @@ namespace PharmMgtSys.Controllers
     [Authorize(Roles = "Pharmacist, Admin")]
     public class PurchasesController : Controller
     {
-        private PharmacyContext db = new PharmacyContext();
+        private ApplicationDbContext db = new ApplicationDbContext();
 
         // GET: Purchases
         public async Task<ActionResult> Index()
@@ -41,8 +41,8 @@ namespace PharmMgtSys.Controllers
         // GET: Purchases/Create
         public ActionResult Create()
         {
-            ViewBag.MedicationID = new SelectList(db.Medications, "MedicatinID", "Name");
-            return View();
+                ViewBag.MedicationID = new SelectList(db.Medications, "MedicationID", "Name");
+                return View();   
         }
 
         // POST: Purchases/Create
@@ -54,21 +54,21 @@ namespace PharmMgtSys.Controllers
         {
             if (ModelState.IsValid)
             {
-                purchase.PurchaseDate = DateTime.Now; //Set current date
-                db.Purchases.Add(purchase);
+                        purchase.PurchaseDate = DateTime.Now; //Set current date
+                        db.Purchases.Add(purchase);
 
-                // Increase stock
-                var medication = db.Medications.Find(purchase.Medication);
-                if (medication != null)
-                {
-                    medication.QuantityInStock += purchase.Quantity;
-                }
+                        // Increase stock
+                        var medication = db.Medications.Find(purchase.MedicationID);
+                        if (medication != null)
+                        {
+                            medication.QuantityInStock += purchase.Quantity;
+                        }
 
-                db.SaveChanges();
-                return RedirectToAction("Index");
+                        db.SaveChanges();
+                        return RedirectToAction("Index");
             }
 
-            ViewBag.MedicationID = new SelectList(db.Medications, "MedicatinID", "Name", purchase.MedicationID);
+            ViewBag.MedicationID = new SelectList(db.Medications, "MedicationID", "Name", purchase.MedicationID);
             var medications = await db.Medications.ToListAsync();
             return View(purchase);
         }
@@ -85,7 +85,7 @@ namespace PharmMgtSys.Controllers
             {
                 return HttpNotFound();
             }
-            ViewBag.MedicationID = new SelectList(db.Medications, "MedicatinID", "Name", purchase.MedicationID);
+            ViewBag.MedicationID = new SelectList(db.Medications, "MedicationID", "Name", purchase.MedicationID);
             return View(purchase);
         }
 
@@ -102,7 +102,7 @@ namespace PharmMgtSys.Controllers
                 await db.SaveChangesAsync();
                 return RedirectToAction("Index");
             }
-            ViewBag.MedicationID = new SelectList(db.Medications, "MedicatinID", "Name", purchase.MedicationID);
+            ViewBag.MedicationID = new SelectList(db.Medications, "MedicationID", "Name", purchase.MedicationID);
             return View(purchase);
         }
 

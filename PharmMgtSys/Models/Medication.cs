@@ -6,7 +6,7 @@ namespace PharmMgtSys.Models
 	{
 
 		[Key]
-		public int MedicatinID { get; set; }
+		public int MedicationID { get; set; }
 
 		[Required]
 		[StringLength(100)]
@@ -18,5 +18,7 @@ namespace PharmMgtSys.Models
 		[Display(Name = "Quantity In Stock")]
 		[Range(0, int.MaxValue)]
 		public int QuantityInStock { get; set; }
+
+		public int ReorderLevel { get; set; }
 	}
 }

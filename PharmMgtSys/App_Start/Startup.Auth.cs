@@ -7,6 +7,7 @@ using Microsoft.Owin.Security.Google;
 using Owin;
 using PharmMgtSys.Models;
 
+[assembly: OwinStartup(typeof(PharmMgtSys.Startup))]
 namespace PharmMgtSys
 {
     public partial class Startup
@@ -34,7 +35,7 @@ namespace PharmMgtSys
                         validateInterval: TimeSpan.FromMinutes(30),
                         regenerateIdentity: (manager, user) => user.GenerateUserIdentityAsync(manager))
                 }
-            });            
+            });
             app.UseExternalSignInCookie(DefaultAuthenticationTypes.ExternalCookie);
 
             // Enables the application to temporarily store user information when they are verifying the second factor in the two-factor authentication process.
@@ -63,6 +64,9 @@ namespace PharmMgtSys
             //    ClientId = "",
             //    ClientSecret = ""
             //});
+
+            app.MapSignalR();
+
         }
     }
 }

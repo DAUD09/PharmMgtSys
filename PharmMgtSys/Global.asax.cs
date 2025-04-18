@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Timers;
 using System.Web;
 using System.Web.Http;
 using System.Web.Mvc;
@@ -8,13 +9,17 @@ using System.Web.Optimization;
 using System.Web.Routing;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
+using Microsoft.AspNet.SignalR;
 using PharmMgtSys.App_Start;
+using PharmMgtSys.Hubs;
 using PharmMgtSys.Models;
 
 namespace PharmMgtSys
 {
+    
     public class MvcApplication : System.Web.HttpApplication
     {
+        private static Timer stockAlertTimer;
         protected void Application_Start()
         {
             DevExtremeBundleConfig.RegisterBundles(BundleTable.Bundles);
@@ -25,6 +30,63 @@ namespace PharmMgtSys
             BundleConfig.RegisterBundles(BundleTable.Bundles);
             CreateRolesAndUsers();
 
+
+            stockAlertTimer = new Timer(60000); // Check every minute
+            stockAlertTimer.Elapsed += CheckStockLevels;
+            stockAlertTimer.AutoReset = true;
+            stockAlertTimer.Start();
+
+        }
+
+        private void CheckStockLevels(object sender, ElapsedEventArgs e)
+        {
+            using (var context = new ApplicationDbContext())
+            {
+                var lowStockItems = context.Medications
+                    .Where(m => m.QuantityInStock < m.ReorderLevel)
+                    .ToList();
+                System.Diagnostics.Debug.WriteLine($"Found {lowStockItems.Count} low stock items at {DateTime.Now}");
+
+                foreach (var medication in lowStockItems)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Sending alert for {medication.Name}");
+                    NotificationService.SendStockAlert(medication);
+                }
+            }
+        }
+
+        public static class NotificationService
+        {
+            public static void SendStockAlert(Medication medication)
+            {
+                using (var context = new ApplicationDbContext())
+                {
+                    // Calculate the threshold outside the LINQ query
+                    var threshold = DateTime.UtcNow.AddHours(-1);
+
+                    // Check if a similar notification exists within the last hour
+                    var recentNotificationExists = context.Notifications
+                        .Any(n => n.Message.Contains(medication.Name) &&
+                                  n.Timestamp > threshold);
+
+                    if (!recentNotificationExists)
+                    {
+                        var notification = new Notification
+                        {
+                            UserId = "admin", // Replace with dynamic logic later
+                            Message = $"Stock alert: {medication.Name} has {medication.QuantityInStock} units, below reorder level of {medication.ReorderLevel}.",
+                            IsRead = false,
+                            Timestamp = DateTime.UtcNow
+                        };
+                        context.Notifications.Add(notification);
+                        context.SaveChanges();
+
+                        // Push via SignalR
+                        var hubContext = GlobalHost.ConnectionManager.GetHubContext<NotificationHub>();
+                        hubContext.Clients.User("admin").addNotification(notification.Message);
+                    }
+                }
+            }
         }
 
         private void CreateRolesAndUsers()

@@ -5,14 +5,14 @@
     using System.Data.Entity.Migrations;
     using System.Linq;
 
-    internal sealed class Configuration : DbMigrationsConfiguration<PharmMgtSys.Models.PharmacyContext>
+    internal sealed class Configuration : DbMigrationsConfiguration<PharmMgtSys.Models.ApplicationDbContext>
     {
         public Configuration()
         {
             AutomaticMigrationsEnabled = false;
         }
 
-        protected override void Seed(PharmMgtSys.Models.PharmacyContext context)
+        protected override void Seed(PharmMgtSys.Models.ApplicationDbContext context)
         {
             //  This method will be called after migrating to the latest version.
 

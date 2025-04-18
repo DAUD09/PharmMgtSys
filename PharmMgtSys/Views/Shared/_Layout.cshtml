@@ -1,76 +1,153 @@
+@{
+    Layout = null;
+}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>@ViewBag.Title - SUMA PHARMACY</title>
-	@Styles.Render("~/Content/css")
-	@Scripts.Render("~/bundles/modernizr")
-	<link href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.min.css" rel="stylesheet" />
-	<link href="https://cdnjs.cloudfare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" rel="stylesheet" />
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>@ViewBag.Title - SUMA PHARMACY</title>
 
-	@Styles.Render("~/Content/DevExtremeBundle")
-	<link href="~/Content/dx.material.blue.dark.compact.css" rel="stylesheet"/>
-	
-	@Scripts.Render("~/bundles/jquery")
-	@Scripts.Render("~/Scripts/DevExtremeBundle")
+    <!-- SB Admin core CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+    <link href="/Content/css/styles.css" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
 
+    <!-- DataTables.net CSS -->
+    <link href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.min.css" rel="stylesheet" />
+
+    <!-- DevExtreme -->
+    @Styles.Render("~/Content/DevExtremeBundle")
+    <link href="~/Content/dx.material.teal.light.compact.css" rel="stylesheet" />
+
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/Scripts/DevExtremeBundle")
 </head>
-<body>
-	<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark">
-		<div class="container">
-			@Html.ActionLink("Suma Phamarcy", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
-			<button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" title="Toggle navigation" aria-controls="navbarSupportedContent"
-					aria-expanded="false" aria-label="Toggle navigation">
-				<span class="navbar-toggler-icon"></span>
-			</button>
-			<div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
-				<ul class="nav navbar-nav">
-					@if (User.IsInRole("Admin"))
-					{
-						<li>@Html.ActionLink("Manage Medications", "Index", "Medications", new { area = "" }, new { @class = "nav-link" })</li>
+<body class="sb-nav-fixed">
+    <!-- Top Navigation -->
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="@Url.Action("Index","Home")">Suma Pharmacy</a>
+        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+            @Html.Partial("_LoginPartial")
+        </ul>
+    </nav>
 
-					}
-					@if (User.IsInRole("Pharmacist") || User.IsInRole("Admin"))
-					{
-						<li> @Html.ActionLink("Manage Purchases", "Index", "Purchases", new { area = "" }, new { @class = "nav-link" }) </li>
-						<li> @Html.ActionLink("Record Sale", "Index", "Sales", new { area = "" }, new { @class = "nav-link" }) </li>
-					}
-					<li class="nav-item dropdown">
-						<a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-							Reports
-						</a>
-						<ul class="dropdown-menu" aria-labelledby="reportsDropdown">
-							<li>@Html.ActionLink("Stock Report", "StockReport", "Reports", null, new { @class = "dropdown-item" })</li>
-							<li>@Html.ActionLink("Transaction Report", "TransactionReport", "Reports", null, new { @class = "dropdown-item" })</li>
-						</ul>
-					</li>
-					@*<li>@Html.ActionLink("About", "About", "Home", new { area = "" }, new { @class = "nav-link" })</li>
-		<li>@Html.ActionLink("Contact", "Contact", "Home", new { area = "" }, new { @class = "nav-link" })</li>*@
-				</ul>
-				@Html.Partial("_LoginPartial")
-			</div>
-		</div>
-	</nav>
-	<div class="container body-content">
-		@RenderBody()
-		<hr />
-		<footer>
-			<p>&copy; @DateTime.Now.Year - Suma Pharmacy Management System</p>
-		</footer>
-	</div>
+    <!-- Sidebar + Content -->
+    <div id="layoutSidenav">
+        <!-- Sidebar -->
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <!-- Core -->
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="@Url.Action("Index","Home")">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
 
-	
-	@Scripts.Render("~/bundles/bootstrap")
-	@RenderSection("scripts", required: false)
-	<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
-	<script>
-		$(function () {
-			let table = new DataTable('#myTable');
-		});
-	</script>
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+                        <!-- Admin-only -->
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a class="nav-link" href="@Url.Action("Index","Medications")">
+                                <div class="sb-nav-link-icon"><i class="fas fa-pills"></i></div>
+                                Manage Medications
+                            </a>
+                            <a class="nav-link" href="@Url.Action("Index","Audit")">
+                                <div class="sb-nav-link-icon"><i class="fas fa-history"></i></div>
+                                Audit Logs
+                            </a>
+                        }
+
+                        <!-- Pharmacist & Admin -->
+                        @if (User.IsInRole("Pharmacist") || User.IsInRole("Admin"))
+                        {
+                            <a class="nav-link" href="@Url.Action("Index","Purchases")">
+                                <div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>
+                                Manage Purchases
+                            </a>
+                            <a class="nav-link" href="@Url.Action("Index","Sales")">
+                                <div class="sb-nav-link-icon"><i class="fas fa-cash-register"></i></div>
+                                Record Sale
+                            </a>
+                        }
+
+                        <!-- Reports -->
+                        <div class="sb-sidenav-menu-heading">Reports</div>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseReports" aria-expanded="false" aria-controls="collapseReports">
+                            <div class="sb-nav-link-icon"><i class="fas fa-file-alt"></i></div>
+                            View Reports
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapseReports" data-bs-parent="#sidenavAccordion">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="@Url.Action("StockReport","Reports")">Stock Report</a>
+                                <a class="nav-link" href="@Url.Action("TransactionReport","Reports")">Transaction Report</a>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+                <div class="sb-sidenav-footer">
+                    <div class="small">Logged in as:</div>
+                    @User.Identity.Name
+                </div>
+            </nav>
+        </div>
+
+        <!-- Page Content -->
+        <div id="layoutSidenav_content">
+            <main class="py-4">
+                <div class="container-fluid px-4">
+                    @RenderBody()
+                </div>
+            </main>
+            <footer class="py-4 bg-light mt-auto">
+                <div class="container-fluid px-4 d-flex justify-content-between small">
+                    <div class="text-muted">&copy; @DateTime.Now.Year - Suma Pharmacy Management System</div>
+                    <div>
+                        <a href="#">About</a> &middot; <a href="#">Contact Us</a>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Core JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="/Content/js/scripts.js"></script>
+
+    <!-- DataTables.net -->
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script>
+        $(function () {
+            new DataTable('#myTable');
+        });
+    </script>
+
+    <!-- SignalR -->
+    <script src="~/Scripts/jquery.signalR-2.4.3.min.js"></script>
+    <script src="~/signalr/hubs"></script>
+    <script>
+        $(function () {
+            var hub = $.connection.notificationHub;
+            hub.client.addNotification = function (msg) {
+                $('#notification-area').prepend(
+                    '<div class="alert alert-info m-2">' + msg + '</div>'
+                );
+            };
+            $.connection.hub.start();
+        });
+    </script>
+
+    
 
 
+    <!-- Notification container -->
+    <div id="notification-area" style="position: fixed; top: 10px; right: 10px; z-index: 1050;"></div>
+
+    @RenderSection("scripts", required: false)
 </body>
 </html>

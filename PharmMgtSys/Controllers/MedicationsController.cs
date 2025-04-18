@@ -15,7 +15,7 @@ namespace PharmMgtSys.Controllers
     [Authorize(Roles = "Admin")]
     public class MedicationsController : Controller
     {
-        private PharmacyContext db = new PharmacyContext();
+        private ApplicationDbContext db = new ApplicationDbContext();
 
         // GET: Medications
         public async Task<ActionResult> Index()
@@ -49,7 +49,7 @@ namespace PharmMgtSys.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create([Bind(Include = "MedicatinID,Name,Price,QuantityInStock")] Medication medication)
+        public async Task<ActionResult> Create([Bind(Include = "MedicationID,Name,Price,QuantityInStock")] Medication medication)
         {
             if (ModelState.IsValid)
             {
@@ -81,7 +81,7 @@ namespace PharmMgtSys.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit([Bind(Include = "MedicatinID,Name,Price,QuantityInStock")] Medication medication)
+        public async Task<ActionResult> Edit([Bind(Include = "MedicationID,Name,Price,QuantityInStock")] Medication medication)
         {
             if (ModelState.IsValid)
             {

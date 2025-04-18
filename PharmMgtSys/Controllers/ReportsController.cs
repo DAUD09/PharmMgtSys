@@ -15,7 +15,7 @@ namespace PharmMgtSys.Controllers
     public class ReportsController : Controller
     {
 
-        private PharmacyContext db = new PharmacyContext();
+        private ApplicationDbContext db = new ApplicationDbContext();
 
 
         // GET: Stock Report

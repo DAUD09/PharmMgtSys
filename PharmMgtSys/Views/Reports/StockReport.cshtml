@@ -1,36 +1,119 @@
 ﻿@model List<PharmMgtSys.Models.StockReportViewModel>
-
+@using DevExtreme.AspNet.Mvc.Builders
 @{
     ViewBag.Title = "Stock Report";
 }
 
 <h3>Stock Report</h3>
 
-<div class="mb-3">
-    @Html.ActionLink("Export to PDF", "ExportStockReportToPdf", "Reports", null, new { @class = "btn btn-primary" })
+@*<div class="mb-3">
+    @Html.ActionLink("Export to PDF", "ExportStockReportToPdf", "Reports", null, new { @class = "btn btn-primary me-2" })
     @Html.ActionLink("Export to Excel", "ExportStockReportToExcel", "Reports", null, new { @class = "btn btn-success" })
-</div>
+</div>*@
 
-<table id="myTable" class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Medication Name</th>
-            <th>Quantity in Stock</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.MedicationName</td>
-                <td>@item.QuantityInStock</td>
-            </tr>
+@(Html.DevExtreme().DataGrid<PharmMgtSys.Models.StockReportViewModel>()
+    .DataSource(Model)
+    .KeyExpr("MedicationName")
+    .ShowBorders(true)
+    .RemoteOperations(true)
+    .ColumnHidingEnabled(true)
+    .Sorting(d => d.Mode(GridSortingMode.Single))
+    .AllowColumnReordering(true)
+    .AllowColumnResizing(true)
+    .GroupPanel(g => g.Visible(true))
+    .ColumnChooser(f => f.Enabled(true).Mode(GridColumnChooserMode.Select))
+    .ShowBorders(true)
+    .HeaderFilter(h => h.Visible(true))
+    .ShowColumnLines(true)
+    .Columns(columns => {
+        columns.AddFor(m => m.MedicationName)
+               .Caption("Medication Name")
+               .Width(300);
+        columns.AddFor(m => m.QuantityInStock)
+               .Caption("Quantity in Stock")
+               .DataType(GridColumnDataType.Number)
+               .Alignment(HorizontalAlignment.Right);
+    })
+    .Paging(p => p.PageSize(10))
+    .Pager(p => p
+        .ShowPageSizeSelector(true)
+        .AllowedPageSizes(new[] { 5, 10, 20 })
+        .ShowInfo(true)
+    )
+    // enable built‑in export to let toolbarPreparing hook work
+    .Export(e => e.Enabled(true))
+    .OnToolbarPreparing("onToolbarPreparing")
+)
+<p class="mt-3">
+    @Html.ActionLink("Back to Home", "Index", "Home", null, new { @class = "btn btn-secondary" })
+</p>
+
+@section scripts {
+    <!-- 1) Export libraries (after DevExtreme scripts) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.2/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Match your DevExtreme 22.2.x bundle version here -->
+    <script src="https://cdn3.devexpress.com/jslib/22.2.7/js/dx.exceljs.js"></script>
+    <script src="https://cdn3.devexpress.com/jslib/22.2.7/js/dx.pdf_exporter.js"></script>
+
+    <script>
+        // 2) Add Excel & PDF buttons to toolbar
+        function onToolbarPreparing(e) {
+            var dataGrid = e.component;
+            e.toolbarOptions.items.unshift(
+                {
+                    location: 'after',
+                    widget: 'dxButton',
+                    options: {
+                        icon: 'exportxlsx',
+                        text: 'Excel',
+                        onClick: function () {
+                            exportGridToExcel(dataGrid);
+                        }
+                    }
+                },
+                {
+                    location: 'after',
+                    widget: 'dxButton',
+                    options: {
+                        icon: 'exportpdf',
+                        text: 'PDF',
+                        onClick: function () {
+                            exportGridToPdf(dataGrid);
+                        }
+                    }
+                }
+            );
         }
-    </tbody>
-    <tfoot>
-        <tr></tr>
-    </tfoot>
-</table>
 
+        // 3) Export helper: Excel
+        function exportGridToExcel(grid) {
+            var workbook = new ExcelJS.Workbook();
+            var worksheet = workbook.addWorksheet('Stock Report');
 
-<p>@Html.ActionLink("Back to Home", "Index", "Home", null, new { @class = "btn btn-primary" })</p>
+            DevExpress.excelExporter.exportDataGrid({
+                component: grid,
+                worksheet: worksheet
+            }).then(function () {
+                workbook.xlsx.writeBuffer().then(function (buffer) {
+                    saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'StockReport.xlsx');
+                });
+            });
+        }
+
+        // 4) Export helper: PDF
+        function exportGridToPdf(grid) {
+            // Using jsPDF’s new ES module:
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            DevExpress.pdfExporter.exportDataGrid({
+                jsPDFDocument: doc,
+                component: grid
+            }).then(function () {
+                doc.save('StockReport.pdf');
+            });
+        }
+    </script>
+    }

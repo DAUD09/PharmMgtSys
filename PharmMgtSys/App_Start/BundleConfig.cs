@@ -23,7 +23,7 @@ namespace PharmMgtSys
                       "~/Scripts/bootstrap.js"));
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
-                      "~/Content/bootstrap-vapor.css",
+                      "~/Content/bootstrap-flatly.css",
                       "~/Content/site.css"));
         }
     }

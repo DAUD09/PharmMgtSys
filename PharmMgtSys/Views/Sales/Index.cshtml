@@ -8,20 +8,30 @@
 
 @(Html.DevExtreme().DataGrid<PharmMgtSys.Models.Sale>()
     .DataSource(ds => ds.WebApi()
-        .RouteName("SalesWebApiApi")
+        .RouteName("SalesWebApi")
         .LoadAction("Get")
         .InsertAction("Post")
         .UpdateAction("Put")
         .DeleteAction("Delete")
         .Key("SaleID")
     )
-    .RemoteOperations(true)
+     .RemoteOperations(true)
+    .ColumnHidingEnabled(true)
+    .Sorting(d => d.Mode(GridSortingMode.Single))
+    .AllowColumnReordering(true)
+    .AllowColumnResizing(true)
+    .GroupPanel(g => g.Visible(true))
+    .ColumnChooser(f => f.Enabled(true).Mode(GridColumnChooserMode.Select))
+    .ShowBorders(true)
+    .HeaderFilter(h => h.Visible(true))
+    .FocusedRowEnabled(true)
+    .ShowColumnLines(true)
     .Columns(columns => {
 
         columns.AddFor(m => m.SaleDate);
 
         columns.AddFor(m => m.MedicationID).Lookup(lookup => lookup
-            .DataSource(ds => ds.WebApi().RouteName("SalesWebApiApi").LoadAction("MedicationsLookup").Key("Value"))
+            .DataSource(ds => ds.WebApi().RouteName("SalesWebApi").LoadAction("MedicationsLookup").Key("Value"))
             .ValueExpr("Value")
             .DisplayExpr("Text")
         );
@@ -31,8 +41,10 @@
         columns.AddFor(m => m.Price);
     })
     .Editing(e => e
-        .AllowAdding(true)
-        .AllowUpdating(true)
-        .AllowDeleting(true)
+    .AllowAdding(true)
+    .AllowUpdating(true)
+    .AllowDeleting(true)
+    .Mode(GridEditMode.Popup)
+    .Popup(p => p.Title("Sales Info").ShowTitle(true)) 
     )
 )

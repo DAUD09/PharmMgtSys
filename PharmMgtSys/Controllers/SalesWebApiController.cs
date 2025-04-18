@@ -17,10 +17,11 @@ using PharmMgtSys.Models;
 
 namespace PharmMgtSys.Controllers
 {
-    [Route("api/SalesWebApi/{action}", Name = "SalesWebApiApi")]
+    [Authorize(Roles = "Pharmacist, Admin")]
+    [Route("api/SalesWebApi/{action}", Name = "SalesWebApi")]
     public class SalesWebApiController : ApiController
     {
-        private PharmacyContext _context = new PharmacyContext();
+        private ApplicationDbContext _context = new ApplicationDbContext();
 
         [HttpGet]
         public async Task<HttpResponseMessage> Get(DataSourceLoadOptions loadOptions) {
@@ -42,7 +43,8 @@ namespace PharmMgtSys.Controllers
         }
 
         [HttpPost]
-        public async Task<HttpResponseMessage> Post(FormDataCollection form) {
+        public async Task<HttpResponseMessage> Post(FormDataCollection form)
+        {
             var model = new Sale();
             var values = JsonConvert.DeserializeObject<IDictionary>(form.Get("values"));
             PopulateModel(model, values);
@@ -51,11 +53,31 @@ namespace PharmMgtSys.Controllers
             if (!ModelState.IsValid)
                 return Request.CreateErrorResponse(HttpStatusCode.BadRequest, GetFullErrorMessage(ModelState));
 
-            var result = _context.Sales.Add(model);
+            // Check stock availability
+            var medication = await _context.Medications.FindAsync(model.MedicationID);
+            if (medication == null || medication.QuantityInStock < model.Quantity)
+            {
+                var errorMsg = "Insufficient stock for " + (medication?.Name ?? "unknown medication");
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, errorMsg);
+            }
+
+            // Set current date
+            model.SaleDate = DateTime.Now;
+
+            // Optionally set price from medication if needed
+            // model.Price = medication.Price;
+
+            // Save the sale
+            _context.Sales.Add(model);
+
+            // Decrease stock
+            medication.QuantityInStock -= model.Quantity;
+
             await _context.SaveChangesAsync();
 
-            return Request.CreateResponse(HttpStatusCode.Created, new { result.SaleID });
+            return Request.CreateResponse(HttpStatusCode.Created, new { model.SaleID });
         }
+
 
         [HttpPut]
         public async Task<HttpResponseMessage> Put(FormDataCollection form) {
@@ -91,7 +113,7 @@ namespace PharmMgtSys.Controllers
             var lookup = from i in _context.Medications
                          orderby i.Name
                          select new {
-                             Value = i.MedicatinID,
+                             Value = i.MedicationID,
                              Text = i.Name
                          };
             return Request.CreateResponse(await DataSourceLoader.LoadAsync(lookup, loadOptions));

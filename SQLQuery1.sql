@@ -1,0 +1,1 @@
+UPDATE Medications SET QuantityInStock = 3, ReorderLevel = 10 WHERE MedicatinID IN (1, 2, 3);

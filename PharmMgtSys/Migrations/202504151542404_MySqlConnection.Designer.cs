@@ -7,13 +7,13 @@ namespace PharmMgtSys.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.5.1")]
-    public sealed partial class InitialCreate : IMigrationMetadata
+    public sealed partial class MySqlConnection : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(InitialCreate));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(MySqlConnection));
         
         string IMigrationMetadata.Id
         {
-            get { return "202502271503018_InitialCreate"; }
+            get { return "202504151542404_MySqlConnection"; }
         }
         
         string IMigrationMetadata.Source
