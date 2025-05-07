@@ -9,10 +9,26 @@ namespace PharmMgtSys.Controllers
 {
     public class HomeController : Controller
     {
+
+
         public ActionResult Index()
         {
-            return View();
+            using (var db = new ApplicationDbContext())
+            {
+                var data = db.Sales
+                    .Select(s => new TransactionReportViewModel
+                    {
+                        Date = s.SaleDate,
+                        MedicationName = s.Medication.Name,
+                        Quantity = s.Quantity,
+                        Price = s.Price
+                    })
+                    .ToList();
+                ViewBag.TransactionReport = data;
+                return View();
+            }
         }
+
 
         public ActionResult About()
         {

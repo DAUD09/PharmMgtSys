@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DevExpress.Web.Mvc;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -31,6 +32,8 @@ namespace PharmMgtSys.Controllers
 
             return View(stockReport);
         }
+
+       
 
         //Get: Transaction Report (with filter)
         public ActionResult TransactionReport(TransactionReportFilterViewModel filter = null)
@@ -74,6 +77,41 @@ namespace PharmMgtSys.Controllers
             return View(transactions);
 
         }
+
+        [ChildActionOnly]
+        public ActionResult SalesChartPartial()
+        {
+            var data = db.Sales
+                .GroupBy(s => s.Medication.Name)
+                .Select(g => new SalesChartViewModel
+                {
+                    MedicationName = g.Key,
+                    TotalQuantity = g.Sum(s => s.Quantity)
+                })
+                .ToList();
+
+            return PartialView("_SalesChartPartial", data);
+        }
+
+
+        //[ChildActionOnly]
+
+        //public ActionResult SalesChartPartial()
+        //{
+        //    var data = db.Sales
+        //        .Select(s => new TransactionReportViewModel
+        //        {
+        //            Date = s.SaleDate,
+        //            MedicationName = s.Medication.Name,
+        //            Quantity = s.Quantity,
+        //            Price = s.Price
+        //        })
+        //        .ToList();
+
+        //    return PartialView("_SalesChartPartial", data);
+        //}
+
+
 
         // Export to PDF for Stock Report
         public ActionResult ExportStockReportToPDF()
@@ -243,5 +281,13 @@ namespace PharmMgtSys.Controllers
             }
             base.Dispose(disposing);
         }
+
+        //PharmMgtSys.Models.ApplicationDbContext db1 = new PharmMgtSys.Models.ApplicationDbContext();
+
+        //public ActionResult _SalesChartPartial()
+        //{
+        //    var model = db1.Sales;
+        //    return PartialView("~/Views/Home/__SalesChartPartial.cshtml", model.ToList());
+        //}
     }
 }

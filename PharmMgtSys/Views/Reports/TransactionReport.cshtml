@@ -41,13 +41,19 @@
     .KeyExpr("Date")  // or your unique key
     .ShowBorders(true)
     .RemoteOperations(true)
+    .RemoteOperations(ro => ro
+    .Filtering(true)    
+    .Paging(true)        
+    .Sorting(true)    
+    .GroupPaging(true)   
+    .Summary(false))      
     .ColumnHidingEnabled(true)
     .Sorting(d => d.Mode(GridSortingMode.Single))
     .AllowColumnReordering(true)
     .AllowColumnResizing(true)
     .GroupPanel(g => g.Visible(true))
     .ColumnChooser(f => f.Enabled(true).Mode(GridColumnChooserMode.Select))
-    .ShowBorders(true)
+    .SearchPanel(sp => sp.Visible(true).Width(240).Placeholder("Search..."))
     .HeaderFilter(h => h.Visible(true))
     .ShowColumnLines(true)
     .Columns(columns => {
@@ -67,9 +73,20 @@
         columns.AddFor(m => m.Price)
                .Caption("Price")
                .DataType(GridColumnDataType.Number)
-               .Format("currency")
+               .Format("#,##0.00 UGX")
                .Alignment(HorizontalAlignment.Right);
     })
+    // 1) Add a total summary for the Price column
+    .Summary(s => s
+        .TotalItems(items =>
+        {
+            items.AddFor(m => m.Price)
+                .SummaryType(SummaryType.Sum)   // sum up all prices :contentReference[oaicite:0]{index=0}
+                .DisplayFormat("Total: {0:#,##0.00 UGX}")
+                //.ValueFormat(Format.Currency)
+                .DisplayFormat("Total: {0} UGX");
+        })
+    )
     .Paging(p => p.PageSize(10))
     .Pager(p => p
         .ShowPageSizeSelector(true)
@@ -111,7 +128,12 @@
 
     <script>
         // 2) Add Excel & PDF buttons to toolbar
-        function onToolbarPreparing(e) {
+        function onToolbarPreparing(e)
+        {
+            e.toolbarOptions.items = e.toolbarOptions.items.filter(item =>
+                !(item.options && item.options.text === "Export all data to Excel")
+            );
+
             var dataGrid = e.component;
             e.toolbarOptions.items.unshift(
                 {

@@ -1,6 +1,9 @@
 @{
     Layout = null;
 }
+@using DevExpress.Web.Mvc.UI
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,6 +27,19 @@
     @Scripts.Render("~/bundles/modernizr")
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/Scripts/DevExtremeBundle")
+
+    @*<script src="~/Scripts/jquery-3.7.0.min.js"></script>*@
+
+    @Html.DevExpress().GetStyleSheets(
+    new DevExpress.Web.Mvc.UI.StyleSheet
+        {
+        ExtensionSuite = DevExpress.Web.Mvc.UI.ExtensionSuite.Chart
+    }
+)
+
+
+
+
 </head>
 <body class="sb-nav-fixed">
     <!-- Top Navigation -->
@@ -108,7 +124,7 @@
                 <div class="container-fluid px-4 d-flex justify-content-between small">
                     <div class="text-muted">&copy; @DateTime.Now.Year - Suma Pharmacy Management System</div>
                     <div>
-                        <a href="#">About</a> &middot; <a href="#">Contact Us</a>
+                        <a href="@Url.Action("About","Home")">About</a> &middot; <a href="@Url.Action("Contact","Home")">Contact Us</a>
                     </div>
                 </div>
             </footer>
@@ -142,12 +158,18 @@
         });
     </script>
 
-    
-
 
     <!-- Notification container -->
     <div id="notification-area" style="position: fixed; top: 10px; right: 10px; z-index: 1050;"></div>
 
     @RenderSection("scripts", required: false)
+
+    @Html.DevExpress().GetScripts(
+     new DevExpress.Web.Mvc.UI.Script
+        {
+         ExtensionSuite = DevExpress.Web.Mvc.UI.ExtensionSuite.Chart
+     }
+ )
+
 </body>
 </html>

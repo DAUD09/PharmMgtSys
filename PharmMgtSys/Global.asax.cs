@@ -16,7 +16,7 @@ using PharmMgtSys.Models;
 
 namespace PharmMgtSys
 {
-    
+
     public class MvcApplication : System.Web.HttpApplication
     {
         private static Timer stockAlertTimer;

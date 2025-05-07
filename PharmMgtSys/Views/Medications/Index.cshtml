@@ -23,6 +23,7 @@
     .AllowColumnResizing(true)
     .GroupPanel(g => g.Visible(true))
     .ColumnChooser(f => f.Enabled(true).Mode(GridColumnChooserMode.Select))
+    .SearchPanel(sp => sp.Visible(true).Width(240).Placeholder("Search..."))
     .ShowBorders(true)
     .HeaderFilter(h => h.Visible(true))
     .FocusedRowEnabled(true)

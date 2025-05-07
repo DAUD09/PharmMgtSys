@@ -1,4 +1,4 @@
-using DevExtreme.AspNet.Data;
+﻿using DevExtreme.AspNet.Data;
 using DevExtreme.AspNet.Mvc;
 using Newtonsoft.Json;
 using System;
@@ -24,22 +24,44 @@ namespace PharmMgtSys.Controllers
         private ApplicationDbContext _context = new ApplicationDbContext();
 
         [HttpGet]
-        public async Task<HttpResponseMessage> Get(DataSourceLoadOptions loadOptions) {
-            var sales = _context.Sales.Select(i => new {
-                i.SaleID,
-                i.SaleDate,
-                i.MedicationID,
-                i.Quantity,
-                i.Price
-            });
+        public async Task<HttpResponseMessage> Get(DataSourceLoadOptions loadOptions)
+        {
+            var sales = _context.Sales
+                .Include(s => s.Medication)
+                .Select(i => new {
+                    i.SaleID,
+                    i.SaleDate,
+                    i.MedicationID,
+                    i.Quantity,
+                    i.Price,
+                    Medication = new
+                    {
+                        i.Medication.MedicationID,
+                        i.Medication.Name,
+                        i.Medication.QuantityInStock,
+                        i.Medication.Price
+                    }
+                });
 
-            // If underlying data is a large SQL table, specify PrimaryKey and PaginateViaPrimaryKey.
-            // This can make SQL execution plans more efficient.
-            // For more detailed information, please refer to this discussion: https://github.com/DevExpress/DevExtreme.AspNet.Data/issues/336.
-            // loadOptions.PrimaryKey = new[] { "SaleID" };
-            // loadOptions.PaginateViaPrimaryKey = true;
+            var result = await DataSourceLoader.LoadAsync(sales, loadOptions);
+            return Request.CreateResponse(result);
+        }
 
-            return Request.CreateResponse(await DataSourceLoader.LoadAsync(sales, loadOptions));
+        [HttpGet]
+        public async Task<HttpResponseMessage> GetAggregatedSales()
+        {
+            var sevenDaysAgo = DateTime.Now.AddDays(-7);
+            var aggregatedSales = await _context.Sales
+                .Where(s => s.SaleDate >= sevenDaysAgo)
+                .GroupBy(s => s.Medication.Name)
+                .Select(g => new
+                {
+                    MedicationName = g.Key,
+                    TotalQuantity = g.Sum(s => s.Quantity)
+                })
+                .ToListAsync();
+
+            return Request.CreateResponse(aggregatedSales);
         }
 
         [HttpPost]
@@ -65,7 +87,7 @@ namespace PharmMgtSys.Controllers
             model.SaleDate = DateTime.Now;
 
             // Optionally set price from medication if needed
-            // model.Price = medication.Price;
+            //model.Price = medication.Price ;
 
             // Save the sale
             _context.Sales.Add(model);
@@ -78,12 +100,12 @@ namespace PharmMgtSys.Controllers
             return Request.CreateResponse(HttpStatusCode.Created, new { model.SaleID });
         }
 
-
         [HttpPut]
-        public async Task<HttpResponseMessage> Put(FormDataCollection form) {
+        public async Task<HttpResponseMessage> Put(FormDataCollection form)
+        {
             var key = Convert.ToInt32(form.Get("key"));
             var model = await _context.Sales.FirstOrDefaultAsync(item => item.SaleID == key);
-            if(model == null)
+            if (model == null)
                 return Request.CreateResponse(HttpStatusCode.Conflict, "Object not found");
 
             var values = JsonConvert.DeserializeObject<IDictionary>(form.Get("values"));
@@ -99,7 +121,8 @@ namespace PharmMgtSys.Controllers
         }
 
         [HttpDelete]
-        public async Task Delete(FormDataCollection form) {
+        public async Task Delete(FormDataCollection form)
+        {
             var key = Convert.ToInt32(form.Get("key"));
             var model = await _context.Sales.FirstOrDefaultAsync(item => item.SaleID == key);
 
@@ -107,59 +130,76 @@ namespace PharmMgtSys.Controllers
             await _context.SaveChangesAsync();
         }
 
-
         [HttpGet]
-        public async Task<HttpResponseMessage> MedicationsLookup(DataSourceLoadOptions loadOptions) {
+        public async Task<HttpResponseMessage> MedicationsLookup(DataSourceLoadOptions loadOptions)
+        {
             var lookup = from i in _context.Medications
                          orderby i.Name
-                         select new {
-                             Value = i.MedicationID,
-                             Text = i.Name
+                         select new
+                         {
+                             Value = i.MedicationID, // Keep as Value for binding
+                             Text = i.Name,        // Keep as Text for display in dropdown
+
+                             // Add the extra data needed in the form
+                             QuantityInStock = i.QuantityInStock,
+                             UnitPrice = i.Price // Use a clear name like UnitPrice
                          };
-            return Request.CreateResponse(await DataSourceLoader.LoadAsync(lookup, loadOptions));
+            // Ensure DataSourceLoader works with the anonymous type including new fields
+            var loadResult = await DataSourceLoader.LoadAsync(lookup, loadOptions);
+            return Request.CreateResponse(loadResult);
         }
 
-        private void PopulateModel(Sale model, IDictionary values) {
+        private void PopulateModel(Sale model, IDictionary values)
+        {
             string SALE_ID = nameof(Sale.SaleID);
             string SALE_DATE = nameof(Sale.SaleDate);
             string MEDICATION_ID = nameof(Sale.MedicationID);
             string QUANTITY = nameof(Sale.Quantity);
             string PRICE = nameof(Sale.Price);
 
-            if(values.Contains(SALE_ID)) {
+            if (values.Contains(SALE_ID))
+            {
                 model.SaleID = Convert.ToInt32(values[SALE_ID]);
             }
 
-            if(values.Contains(SALE_DATE)) {
+            if (values.Contains(SALE_DATE))
+            {
                 model.SaleDate = Convert.ToDateTime(values[SALE_DATE]);
             }
 
-            if(values.Contains(MEDICATION_ID)) {
+            if (values.Contains(MEDICATION_ID))
+            {
                 model.MedicationID = Convert.ToInt32(values[MEDICATION_ID]);
             }
 
-            if(values.Contains(QUANTITY)) {
+            if (values.Contains(QUANTITY))
+            {
                 model.Quantity = Convert.ToInt32(values[QUANTITY]);
             }
 
-            if(values.Contains(PRICE)) {
+            if (values.Contains(PRICE))
+            {
                 model.Price = Convert.ToDecimal(values[PRICE], CultureInfo.InvariantCulture);
             }
         }
 
-        private string GetFullErrorMessage(ModelStateDictionary modelState) {
+        private string GetFullErrorMessage(ModelStateDictionary modelState)
+        {
             var messages = new List<string>();
 
-            foreach(var entry in modelState) {
-                foreach(var error in entry.Value.Errors)
+            foreach (var entry in modelState)
+            {
+                foreach (var error in entry.Value.Errors)
                     messages.Add(error.ErrorMessage);
             }
 
             return String.Join(" ", messages);
         }
 
-        protected override void Dispose(bool disposing) {
-            if (disposing) {
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
                 _context.Dispose();
             }
             base.Dispose(disposing);

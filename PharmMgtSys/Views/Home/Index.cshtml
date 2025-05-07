@@ -1,9 +1,21 @@
 ﻿@{
     ViewBag.Title = "Home Page";
 }
-
 <main>
     <section class="row" aria-labelledby="aspnetTitle">
         <center><h1 id="title">SUMA PHARMACY MANAGEMENT SYSTEM</h1></center>
     </section>
+
+    @*@Html.Partial(
+        "_SalesChartPartial",
+        ViewBag.TransactionReport as List<PharmMgtSys.Models.TransactionReportViewModel>
+        )*@
+    @*<div id="SalesChartContainer">
+            @Html.Action("SalesChartPartial", "Reports")
+        </div>*@
+
+    @Html.Partial("_SalesChartPartial")
+
+
+
 </main>   

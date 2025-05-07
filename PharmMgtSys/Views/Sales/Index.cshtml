@@ -1,12 +1,15 @@
 ﻿@model IEnumerable<PharmMgtSys.Models.Sale>
+@using DevExtreme.AspNet.Mvc
+@using PharmMgtSys.Models
 
 @{
-    ViewBag.Title = "Sales";
+    ViewBag.Title = "Sales Records";
 }
 
-<h3>Sales</h3>
+<h3>@ViewBag.Title</h3>
 
-@(Html.DevExtreme().DataGrid<PharmMgtSys.Models.Sale>()
+@(Html.DevExtreme().DataGrid<Sale>()
+    .ID("salesGrid")
     .DataSource(ds => ds.WebApi()
         .RouteName("SalesWebApi")
         .LoadAction("Get")
@@ -15,36 +18,207 @@
         .DeleteAction("Delete")
         .Key("SaleID")
     )
-     .RemoteOperations(true)
+    .RemoteOperations(true)
+    .OnEditorPreparing("salesGrid_onEditorPreparing")
+    .OnRowInserted("salesGrid_onRowInserted")
+    .OnRowUpdated("salesGrid_onRowUpdated")
+    .Paging(p => p.PageSize(10))
+    .Pager(pg => pg
+        .ShowPageSizeSelector(true)
+        .AllowedPageSizes(new[] { 5, 10, 20 })
+        .ShowInfo(true))
+    .ShowBorders(true)
     .ColumnHidingEnabled(true)
-    .Sorting(d => d.Mode(GridSortingMode.Single))
     .AllowColumnReordering(true)
     .AllowColumnResizing(true)
-    .GroupPanel(g => g.Visible(true))
-    .ColumnChooser(f => f.Enabled(true).Mode(GridColumnChooserMode.Select))
-    .ShowBorders(true)
-    .HeaderFilter(h => h.Visible(true))
     .FocusedRowEnabled(true)
     .ShowColumnLines(true)
-    .Columns(columns => {
+    .ColumnHidingEnabled(true)
+    .HeaderFilter(h => h.Visible(true))
+    .FilterRow(f => f.Visible(true))
+    .SearchPanel(sp => sp.Visible(true).Width(240).Placeholder("Search..."))
+    .Sorting(s => s.Mode(GridSortingMode.Single))
+    .GroupPanel(gp => gp.Visible(true))
+    .ColumnChooser(cc => cc.Enabled(true).Mode(GridColumnChooserMode.Select))
 
-        columns.AddFor(m => m.SaleDate);
+    .Columns(cols => {
+        cols.AddFor(m => m.SaleDate)
+            .Caption("Date")
+            .DataType(GridColumnDataType.Date);
 
-        columns.AddFor(m => m.MedicationID).Lookup(lookup => lookup
-            .DataSource(ds => ds.WebApi().RouteName("SalesWebApi").LoadAction("MedicationsLookup").Key("Value"))
-            .ValueExpr("Value")
-            .DisplayExpr("Text")
-        );
+        cols.AddFor(m => m.MedicationID)
+            .Caption("Medication")
+            .Lookup(lu => lu
+                .DataSource(ds => ds.WebApi()
+                    .RouteName("SalesWebApi")
+                    .LoadAction("MedicationsLookup")
+                    .Key("Value")
+                )
+                .ValueExpr("Value")
+                .DisplayExpr("Text")
+            );
 
-        columns.AddFor(m => m.Quantity);
+        cols.AddFor(m => m.Quantity)
+            .Caption("Quantity");
 
-        columns.AddFor(m => m.Price);
+        cols.AddFor(m => m.Price)
+            .Caption("Total Price")
+            .Format("#,##0.00 UGX");
     })
-    .Editing(e => e
-    .AllowAdding(true)
-    .AllowUpdating(true)
-    .AllowDeleting(true)
-    .Mode(GridEditMode.Popup)
-    .Popup(p => p.Title("Sales Info").ShowTitle(true)) 
+
+    .Editing(edit => edit
+        .AllowAdding(true)
+        .AllowUpdating(true)
+        .AllowDeleting(true)
+        .Mode(GridEditMode.Popup)
+        .Popup(p => p
+            .Title("Sales Info").ShowTitle(true)
+            .Width(1000).Height("auto")  // Increased width to 1200 pixels
+            .Position(pos => pos
+                .My(HorizontalAlignment.Center, VerticalAlignment.Top)
+                .At(HorizontalAlignment.Center, VerticalAlignment.Top)
+                .Offset(0, 50)
+            )
+        )
+        .Form(form => form
+            .LabelLocation(FormLabelLocation.Top)
+            .Items(items => {
+                // Group 1: Editable fields with 2 columns
+                items.AddGroup().ColCount(2).Items(g => {
+                    // SaleDate
+                    g.AddSimpleFor(m => m.SaleDate)
+                     .Editor(e => e.DateBox().Width("100%"));
+
+                    // Medication
+                    g.AddSimpleFor(m => m.MedicationID)
+                     .Label(l => l.Text("Medication"))
+                     .Editor(e => e.Lookup().Width("100%"));
+
+                    // Quantity
+                    g.AddSimpleFor(m => m.Quantity)
+                     .Label(l => l.Text("Quantity"))
+                     .Editor(e => e.NumberBox().Width("100%").ShowSpinButtons(true).Min(1));
+
+                    // Total Price
+                    g.AddSimpleFor(m => m.Price)
+                     .Label(l => l.Text("Total Price"))
+                     .Editor(e => e.NumberBox().Format("#,##0.00 UGX").Width("100%").ReadOnly(false));
+                });
+
+                // Group 2: Display-only fields with 1 column
+                items.AddGroup().ColCount(1).Items(g => {
+                    // Unit Price (display only)
+                    g.AddSimple()
+                     .Name("UnitPriceDisplay")
+                     .Label(l => l.Text("Unit Price"))
+                     .Template(new JS(@"
+                        function(obj) {
+                          var price = obj._lookup?.UnitPrice || 0;
+                          return $('<div>')
+                            .addClass('dx-field-value')
+                            .css('width', '100%')
+                            .text(price.toLocaleString(undefined,{
+                              style:'currency',currency:'UGX'
+                            }));
+                        }
+                     "));
+
+                    // Stock Qty (display only)
+                    g.AddSimple()
+                     .Name("StockQtyDisplay")
+                     .Label(l => l.Text("In Stock"))
+                     .Template(new JS(@"
+                        function(obj) {
+                          var sq = obj._lookup?.QuantityInStock ?? '-';
+                          return $('<div>')
+                            .addClass('dx-field-value')
+                            .css('width', '100%')
+                            .text(sq);
+                        }
+                     "));
+                });
+
+                // Hidden key
+                items.AddSimpleFor(m => m.SaleID).Visible(false);
+            })
+        )
+    )
+
+    .OnEditorPreparing("salesGrid_onEditorPreparing")
+
+    .Paging(p => p.PageSize(10))
+    .Pager(pg => pg
+        .ShowPageSizeSelector(true)
+        .AllowedPageSizes(new[] {5,10,20})
+        .ShowInfo(true)
     )
 )
+
+<script>
+    function salesGrid_onEditorPreparing(e) {
+        // Medication lookup change
+        if (e.parentType === "dataRow" && e.dataField === "MedicationID") {
+            const orig = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = function (args) {
+                orig && orig.apply(this, arguments);
+
+                const item = this.option("selectedItem");
+                const form = e.component.getController("editing")._editForm;
+
+                if (item && form) {
+                    // keep lookup data
+                    form.option("formData._lookup", item);
+
+                    // update the two template items using itemOption
+                    form.itemOption("UnitPriceDisplay", "template", function () {
+                        const p = item.UnitPrice || 0;
+                        return $("<div>")
+                            .addClass("dx-field-value")
+                            .css('width', '100%')
+                            .text(p.toLocaleString(undefined, {
+                                style: "currency", currency: "UGX"
+                            }));
+                    });
+                    form.itemOption("StockQtyDisplay", "template", function () {
+                        return $("<div>")
+                            .addClass("dx-field-value")
+                            .css('width', '100%')
+                            .text(item.QuantityInStock ?? "-");
+                    });
+
+                    // recalc total
+                    const qty = form.option("formData").Quantity || 0;
+                    form.updateData("Price", qty * (item.UnitPrice || 0));
+                }
+            };
+        }
+
+        // Quantity change
+        if (e.parentType === "dataRow" && e.dataField === "Quantity") {
+            const origQ = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = function (args) {
+                origQ && origQ.apply(this, arguments);
+                const form = e.component.getController("editing")._editForm;
+                const item = form.option("formData._lookup");
+                if (item && form) {
+                    form.updateData("Price", (args.value || 0) * (item.UnitPrice || 0));
+                }
+            };
+        }
+
+        // make SaleDate readonly on edit
+        if (e.parentType === "dataRow"
+            && e.dataField === "SaleDate"
+            && !e.row.isNewRow) {
+            e.editorOptions.readOnly = true;
+        }
+    }
+
+    function salesGrid_onRowInserted(e) {
+        $("#SalesChart").dxChart("getDataSource").reload();
+    }
+
+    function salesGrid_onRowUpdated(e) {
+        $("#SalesChart").dxChart("getDataSource").reload();
+    }
+</script>

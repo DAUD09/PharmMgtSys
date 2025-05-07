@@ -1,0 +1,53 @@
+﻿@model IEnumerable<PharmMgtSys.Models.SalesChartViewModel>
+@using DevExtreme.AspNet.Mvc
+@using DevExtreme.AspNet.Mvc.Builders
+
+<style>
+    #SalesChartContainer {
+        width: 100%;
+        /*height: 700px;*/
+    }
+</style>
+
+<div id="SalesChartContainer">
+    @(Html.DevExtreme().Chart()
+        .ID("SalesChart")
+        .DataSource(ds => ds.WebApi()
+            .RouteName("SalesWebApi")
+            .LoadAction("GetAggregatedSales")
+        )
+        .Size(s => s.Height(500))
+        .Palette(VizPalette.Material)
+        .Series(series =>
+        {
+            series.Add()
+                  .Type(SeriesType.Bar)
+                  .ArgumentField("MedicationName")
+                  .ValueField("TotalQuantity")
+                  .Name("Units Sold");
+        })
+        .ArgumentAxis(axis => axis
+            .Title(t => t.Text("Medication"))
+            .Label(l => l.OverlappingBehavior(OverlappingBehavior.Stagger))
+        )
+        .ValueAxis(axis => axis
+            .Add()
+              .Title(t => t.Text("Units Sold"))
+              .Label(l => l.OverlappingBehavior(OverlappingBehavior.Stagger))
+        )
+        .Title(t => t
+            .Text("Recent Drug Sales")
+            .Subtitle(st => st.Text("Last 7 Days"))
+        )
+        .Tooltip(tt => tt
+            .Enabled(true)
+            .CustomizeTooltip("function(arg) { return arg.argument + ': ' + arg.value + ' units'; }")
+        )
+        .Legend(l => l
+        .Visible(true)
+        .HorizontalAlignment(HorizontalAlignment.Center)
+        .VerticalAlignment(VerticalEdge.Bottom))
+        //.Legend(l => l.Visible(false))
+        .Export(e => e.Enabled(true))
+    )
+</div>

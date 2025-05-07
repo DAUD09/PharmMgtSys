@@ -1,0 +1,19 @@
+﻿@model PharmMgtSys.Models.Sale
+
+<div class="form-group">
+    <label>Unit Price</label>
+    <input type="text" class="form-control" value="@Model.Medication.Price.ToString("C")" readonly />
+</div>
+
+@*@(Html.DevExtreme().DataGrid<PharmMgtSys.Models.Sale>()
+    .DataSource(ds => ds.WebApi()
+        .RouteName("SalesWebApi")
+        .LoadAction("Get")
+        .Key("SaleID")
+    )
+    .RemoteOperations(true)
+    .Columns(columns => {
+
+        columns.AddFor(m => m.Price);
+    })
+)*@

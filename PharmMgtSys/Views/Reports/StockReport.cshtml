@@ -14,17 +14,18 @@
 @(Html.DevExtreme().DataGrid<PharmMgtSys.Models.StockReportViewModel>()
     .DataSource(Model)
     .KeyExpr("MedicationName")
-    .ShowBorders(true)
     .RemoteOperations(true)
+    .ShowBorders(true)
     .ColumnHidingEnabled(true)
-    .Sorting(d => d.Mode(GridSortingMode.Single))
     .AllowColumnReordering(true)
     .AllowColumnResizing(true)
-    .GroupPanel(g => g.Visible(true))
-    .ColumnChooser(f => f.Enabled(true).Mode(GridColumnChooserMode.Select))
-    .ShowBorders(true)
-    .HeaderFilter(h => h.Visible(true))
     .ShowColumnLines(true)
+    .ColumnHidingEnabled(true)
+    .HeaderFilter(h => h.Visible(true))
+    .FilterRow(f => f.Visible(true))
+    .Sorting(s => s.Mode(GridSortingMode.Single))
+    .GroupPanel(gp => gp.Visible(true))
+    .ColumnChooser(cc => cc.Enabled(true).Mode(GridColumnChooserMode.Select))
     .Columns(columns => {
         columns.AddFor(m => m.MedicationName)
                .Caption("Medication Name")
@@ -59,7 +60,12 @@
 
     <script>
         // 2) Add Excel & PDF buttons to toolbar
-        function onToolbarPreparing(e) {
+        function onToolbarPreparing(e) 
+        {
+            e.toolbarOptions.items = e.toolbarOptions.items.filter(item =>
+                !(item.options && item.options.text === "Export all data to Excel")
+            );
+
             var dataGrid = e.component;
             e.toolbarOptions.items.unshift(
                 {
