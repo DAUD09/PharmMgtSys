@@ -10,17 +10,17 @@ namespace PharmMgtSys.Models
 
 		public int Id { get; set; }
 
-		public string UserId { get; set; } // Links to the user who performed the action
+		public string UserId { get; set; } 
 
-		public string Action { get; set; } // "Insert", "Update", "Delete"
+		public string Action { get; set; } 
 
-		public string EntityName { get; set; } // e.g., "Medication", "Sale"
+		public string EntityName { get; set; } 
 
-		public string EntityId { get; set; } // The ID of the affected record
+		public string EntityId { get; set; } 
 
-		public DateTime Timestamp { get; set; } // When the action occurred
+		public DateTime Timestamp { get; set; } 
 
-		public string Details { get; set; } // Additional info (e.g., before/after values
+		public string Details { get; set; } 
 
 
 	}

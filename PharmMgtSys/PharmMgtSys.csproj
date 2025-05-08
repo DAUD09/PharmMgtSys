@@ -288,12 +288,17 @@
     <Compile Include="Controllers\ReportsController.cs" />
     <Compile Include="Controllers\SalesController.cs" />
     <Compile Include="Controllers\SalesWebApiController.cs" />
+    <Compile Include="Controllers\UsersController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Migrations\202504151542404_MySqlConnection.cs" />
     <Compile Include="Migrations\202504151542404_MySqlConnection.Designer.cs">
       <DependentUpon>202504151542404_MySqlConnection.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202505081302466_AddIsActiveToApplicationUser.cs" />
+    <Compile Include="Migrations\202505081302466_AddIsActiveToApplicationUser.Designer.cs">
+      <DependentUpon>202505081302466_AddIsActiveToApplicationUser.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
@@ -536,10 +541,10 @@
     <Content Include="Views\Purchases\Index.cshtml" />
     <Content Include="Views\Sales\Index.cshtml" />
     <Content Include="Views\Audit\Index.cshtml" />
-    <Content Include="Views\Audit\Index - Copy.cshtml" />
     <Content Include="Views\Home\_SalesChartPartial.cshtml" />
     <Content Include="Views\Sales\_StockQuantity.cshtml" />
     <Content Include="Views\Sales\_UnitPrice.cshtml" />
+    <Content Include="Views\Users\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -574,6 +579,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Migrations\202504151542404_MySqlConnection.resx">
       <DependentUpon>202504151542404_MySqlConnection.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202505081302466_AddIsActiveToApplicationUser.resx">
+      <DependentUpon>202505081302466_AddIsActiveToApplicationUser.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

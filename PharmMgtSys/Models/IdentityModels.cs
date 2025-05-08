@@ -1,5 +1,5 @@
 ﻿using System.Data.Entity;
-using  MySql.Data.Entity;
+using MySql.Data.Entity;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
@@ -10,17 +10,17 @@ using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Web;
 using System;
+using System.Diagnostics;
 
 namespace PharmMgtSys.Models
 {
-    // You can add profile data for the user by adding more properties to your ApplicationUser class, please visit https://go.microsoft.com/fwlink/?LinkID=317594 to learn more.
     public class ApplicationUser : IdentityUser
     {
+        public bool IsActive { get; set; } = true; // Default to active
+
         public async Task<ClaimsIdentity> GenerateUserIdentityAsync(UserManager<ApplicationUser> manager)
         {
-            // Note the authenticationType must match the one defined in CookieAuthenticationOptions.AuthenticationType
             var userIdentity = await manager.CreateIdentityAsync(this, DefaultAuthenticationTypes.ApplicationCookie);
-            // Add custom user claims here
             return userIdentity;
         }
     }
@@ -43,10 +43,8 @@ namespace PharmMgtSys.Models
         public override int SaveChanges()
         {
             var auditLogs = new List<AuditLog>();
-            // Get the current user's ID (assuming ASP.NET Identity)
             var currentUserId = HttpContext.Current?.User?.Identity?.GetUserId() ?? "System";
 
-            // Loop through all tracked entities that have changed
             foreach (var entry in ChangeTracker.Entries()
                 .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted))
             {
@@ -62,30 +60,50 @@ namespace PharmMgtSys.Models
                 auditLogs.Add(auditLog);
             }
 
-            // Save the original changes first
+            if (auditLogs.Any())
+            {
+                Debug.WriteLine($"Adding {auditLogs.Count} audit logs at {DateTime.UtcNow}");
+            }
+
             int result = base.SaveChanges();
 
-            // Then save the audit logs
             if (auditLogs.Any())
             {
                 AuditLogs.AddRange(auditLogs);
-                base.SaveChanges(); // Second save for audit logs
+                base.SaveChanges();
+                Debug.WriteLine("Audit logs saved successfully");
             }
 
             return result;
         }
 
-        // Helper method to get the entity's ID
         private string GetEntityId(object entity)
         {
             var property = entity.GetType().GetProperty("Id");
             return property?.GetValue(entity)?.ToString() ?? "Unknown";
         }
 
-        // Helper method to capture details of the change
         private string GetDetails(DbEntityEntry entry)
         {
-            if (entry.State == EntityState.Added || entry.State == EntityState.Deleted)
+            if (entry.Entity is Sale)
+            {
+                var sale = entry.Entity as Sale;
+                return JsonConvert.SerializeObject(new
+                {
+                    sale.SaleDate,
+                    sale.Price
+                });
+            }
+            else if (entry.Entity is Purchase)
+            {
+                var purchase = entry.Entity as Purchase;
+                return JsonConvert.SerializeObject(new
+                {
+                    purchase.PurchaseDate,
+                    purchase.MedicationID
+                });
+            }
+            else if (entry.State == EntityState.Added || entry.State == EntityState.Deleted)
             {
                 return JsonConvert.SerializeObject(entry.Entity);
             }
@@ -99,12 +117,8 @@ namespace PharmMgtSys.Models
         }
 
         public DbSet<Medication> Medications { get; set; }
-
         public DbSet<Purchase> Purchases { get; set; }
-
         public DbSet<Sale> Sales { get; set; }
-
         public DbSet<Notification> Notifications { get; set; }
-
     }
 }

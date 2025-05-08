@@ -1,0 +1,64 @@
+﻿@using DevExtreme.AspNet.Mvc
+@using DevExtreme.AspNet.Mvc.Builders
+@{
+    ViewBag.Title = "Manage Users";
+}
+
+<h3>Manage Users</h3>
+
+@(Html.DevExtreme().DataGrid()
+    .ID("userGrid")
+    .DataSource(ds => ds.Mvc()
+        .Controller("Users")
+        .LoadAction("GetUsers")
+        .InsertAction("Create")
+        .UpdateAction("Update")
+        .DeleteAction("Delete")
+        .Key("Id")
+        .LoadParams(new { _ = DateTime.Now.Ticks }) // Prevent caching
+    )
+    .RemoteOperations(true)
+    .Sorting(d => d.Mode(GridSortingMode.Single))
+    .SearchPanel(sp => sp.Visible(true).Width(240).Placeholder("Search..."))
+    .ShowBorders(true)
+    .FocusedRowEnabled(true)
+    .ShowColumnLines(true)
+    .Columns(columns =>
+    {
+        columns.Add().DataField("Id").Visible(false);
+        columns.Add().DataField("UserName").Caption("Username");
+        columns.Add().DataField("Email");
+        columns.Add().DataField("IsActive").Caption("Active");
+        columns.Add().DataField("Roles").Caption("Roles").CalculateCellValue("function(data) { return data.Roles.join(', '); }").AllowEditing(false);
+    })
+    .Editing(e => e
+        .AllowAdding(false)
+        .AllowUpdating(true)
+        .AllowDeleting(true)
+        .Mode(GridEditMode.Popup)
+        .Popup(p => p
+            .Title("User Info")
+            .ShowTitle(true)
+            .Width(700)
+            .Height(525)
+        )
+        .Form(f => f.Items(items =>
+        {
+            items.AddSimple().DataField("Email");
+            items.AddSimple().DataField("IsActive");
+            items.AddSimple().DataField("Roles").Editor(ed => ed.TagBox()
+                .DataSource(ds => ds.Mvc().Controller("Users").LoadAction("GetRoles"))
+                .ValueExpr("Name")
+                .DisplayExpr("Name")
+            );
+            items.AddSimple()
+                .Editor(ed => ed.TextBox()
+                    .Name("Password")
+                    .Mode(DevExtreme.AspNet.Mvc.TextBoxMode.Password)
+                )
+                .Label(l => l.Text("Password"));
+        }))
+    )
+    .OnRowInserting("function(e) { e.data.UserName = e.data.Email; }")
+    .OnEditorPreparing("function(e) { if (e.dataField === 'Password') { e.editorOptions.visible = !e.row || !e.row.data.Id; } }")
+)

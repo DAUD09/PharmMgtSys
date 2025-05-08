@@ -23,28 +23,28 @@ namespace PharmMgtSys.Controllers
         private ApplicationDbContext _context = new ApplicationDbContext();
 
         [HttpGet]
-        public async Task<HttpResponseMessage> Get(DataSourceLoadOptions loadOptions) {
-            var auditlogs = _context.AuditLogs.Select(i => new {
-                i.Id,
-                i.UserId,
-                i.Action,
-                i.EntityName,
-                i.EntityId,
-                i.Timestamp,
-                i.Details
-            });
-
-            // If underlying data is a large SQL table, specify PrimaryKey and PaginateViaPrimaryKey.
-            // This can make SQL execution plans more efficient.
-            // For more detailed information, please refer to this discussion: https://github.com/DevExpress/DevExtreme.AspNet.Data/issues/336.
-            // loadOptions.PrimaryKey = new[] { "Id" };
-            // loadOptions.PaginateViaPrimaryKey = true;
+        public async Task<HttpResponseMessage> Get(DataSourceLoadOptions loadOptions)
+        {
+            var auditlogs = from log in _context.AuditLogs
+                            join user in _context.Users on log.UserId equals user.Id into userJoin
+                            from user in userJoin.DefaultIfEmpty()
+                            select new
+                            {
+                                log.Id,
+                                UserEmail = user != null ? user.Email : "System",
+                                log.Action,
+                                log.EntityName,
+                                log.EntityId,
+                                log.Timestamp,
+                                log.Details
+                            };
 
             return Request.CreateResponse(await DataSourceLoader.LoadAsync(auditlogs, loadOptions));
         }
 
         [HttpPost]
-        public async Task<HttpResponseMessage> Post(FormDataCollection form) {
+        public async Task<HttpResponseMessage> Post(FormDataCollection form)
+        {
             var model = new AuditLog();
             var values = JsonConvert.DeserializeObject<IDictionary>(form.Get("values"));
             PopulateModel(model, values);
@@ -60,10 +60,11 @@ namespace PharmMgtSys.Controllers
         }
 
         [HttpPut]
-        public async Task<HttpResponseMessage> Put(FormDataCollection form) {
+        public async Task<HttpResponseMessage> Put(FormDataCollection form)
+        {
             var key = Convert.ToInt32(form.Get("key"));
             var model = await _context.AuditLogs.FirstOrDefaultAsync(item => item.Id == key);
-            if(model == null)
+            if (model == null)
                 return Request.CreateResponse(HttpStatusCode.Conflict, "Object not found");
 
             var values = JsonConvert.DeserializeObject<IDictionary>(form.Get("values"));
@@ -79,7 +80,8 @@ namespace PharmMgtSys.Controllers
         }
 
         [HttpDelete]
-        public async Task Delete(FormDataCollection form) {
+        public async Task Delete(FormDataCollection form)
+        {
             var key = Convert.ToInt32(form.Get("key"));
             var model = await _context.AuditLogs.FirstOrDefaultAsync(item => item.Id == key);
 
@@ -87,8 +89,8 @@ namespace PharmMgtSys.Controllers
             await _context.SaveChangesAsync();
         }
 
-
-        private void PopulateModel(AuditLog model, IDictionary values) {
+        private void PopulateModel(AuditLog model, IDictionary values)
+        {
             string ID = nameof(AuditLog.Id);
             string USER_ID = nameof(AuditLog.UserId);
             string ACTION = nameof(AuditLog.Action);
@@ -97,48 +99,59 @@ namespace PharmMgtSys.Controllers
             string TIMESTAMP = nameof(AuditLog.Timestamp);
             string DETAILS = nameof(AuditLog.Details);
 
-            if(values.Contains(ID)) {
+            if (values.Contains(ID))
+            {
                 model.Id = Convert.ToInt32(values[ID]);
             }
 
-            if(values.Contains(USER_ID)) {
+            if (values.Contains(USER_ID))
+            {
                 model.UserId = Convert.ToString(values[USER_ID]);
             }
 
-            if(values.Contains(ACTION)) {
+            if (values.Contains(ACTION))
+            {
                 model.Action = Convert.ToString(values[ACTION]);
             }
 
-            if(values.Contains(ENTITY_NAME)) {
+            if (values.Contains(ENTITY_NAME))
+            {
                 model.EntityName = Convert.ToString(values[ENTITY_NAME]);
             }
 
-            if(values.Contains(ENTITY_ID)) {
+            if (values.Contains(ENTITY_ID))
+            {
                 model.EntityId = Convert.ToString(values[ENTITY_ID]);
             }
 
-            if(values.Contains(TIMESTAMP)) {
+            if (values.Contains(TIMESTAMP))
+            {
                 model.Timestamp = Convert.ToDateTime(values[TIMESTAMP]);
             }
 
-            if(values.Contains(DETAILS)) {
+            if (values.Contains(DETAILS))
+            {
                 model.Details = Convert.ToString(values[DETAILS]);
             }
         }
 
-        private string GetFullErrorMessage(ModelStateDictionary modelState) {
+        private string GetFullErrorMessage(ModelStateDictionary modelState)
+        {
             var messages = new List<string>();
 
-            foreach(var entry in modelState) {
-                foreach(var error in entry.Value.Errors)
+            foreach (var entry in modelState)
+            {
+                foreach (var error in entry.Value.Errors)
                     messages.Add(error.ErrorMessage);
             }
 
             return String.Join(" ", messages);
         }
 
-        protected override void Dispose(bool disposing) {
-            if (disposing) {
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
                 _context.Dispose();
             }
             base.Dispose(disposing);

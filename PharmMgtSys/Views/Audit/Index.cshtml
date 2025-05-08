@@ -1,17 +1,17 @@
 ﻿@model IEnumerable<PharmMgtSys.Models.AuditLog>
 @{
     ViewBag.Title = "Audit Logs";
-    Layout = "~/Views/Shared/_Layout.cshtml"; 
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <h2>Audit Logs</h2>
 
-@(Html.DevExtreme().DataGrid<PharmMgtSys.Models.AuditLog>
-    ()
+@(Html.DevExtreme().DataGrid()
+    .ID("auditGrid")
     .DataSource(ds => ds.WebApi()
-    .RouteName("AuditLogsWebApi")
-    .LoadAction("Get")
-    .Key("Id")
+        .RouteName("AuditLogsWebApi")
+        .LoadAction("Get")
+        .Key("Id")
     )
     .RemoteOperations(true)
     .ColumnHidingEnabled(true)
@@ -26,25 +26,29 @@
     .FocusedRowEnabled(true)
     .ShowColumnLines(true)
     .Columns(columns => {
-
-    columns.AddFor(m => m.Id);
-
-    columns.AddFor(m => m.UserId);
-
-    columns.AddFor(m => m.Action);
-
-    columns.AddFor(m => m.EntityName);
-
-    columns.AddFor(m => m.EntityId);
-
-    columns.AddFor(m => m.Timestamp);
-
-    columns.AddFor(m => m.Details);
+        columns.Add().DataField("Id").Caption("ID");
+        columns.Add().DataField("UserEmail").Caption("User Email");
+        columns.Add().DataField("Action").Caption("Action");
+        columns.Add().DataField("EntityName").Caption("Entity Name");
+        columns.Add().DataField("EntityId").Caption("Entity ID");
+        columns.Add().DataField("Timestamp").Caption("Timestamp");
+        columns.Add().DataField("Details").Caption("Details");
     })
     .Editing(e => e
-    .AllowAdding(false)
-    .AllowUpdating(false)
-    .AllowDeleting(false)
-    .Mode(GridEditMode.Popup)
-    .Popup(p => p.Title("Audit Info").ShowTitle(true))
-    ))
+        .AllowAdding(false)
+        .AllowUpdating(false)
+        .AllowDeleting(false)
+        .Mode(GridEditMode.Popup)
+        .Popup(p => p.Title("Audit Info").ShowTitle(true))
+    )
+)
+@(Html.DevExtreme().Button()
+    .Text("Refresh")
+    .OnClick("refreshGrid")
+)
+
+<script>
+    function refreshGrid() {
+        $("#auditGrid").dxDataGrid("instance").refresh();
+    }
+</script>
