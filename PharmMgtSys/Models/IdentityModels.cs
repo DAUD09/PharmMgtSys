@@ -14,6 +14,8 @@ using System.Diagnostics;
 
 namespace PharmMgtSys.Models
 {
+    public interface IAuditable { } // Keep interface for potential future use
+
     public class ApplicationUser : IdentityUser
     {
         public bool IsActive { get; set; } = true; // Default to active
@@ -39,73 +41,87 @@ namespace PharmMgtSys.Models
         }
 
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<Medication> Medications { get; set; }
+        public DbSet<Purchase> Purchases { get; set; }
+        public DbSet<Sale> Sales { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         public override int SaveChanges()
         {
             var auditLogs = new List<AuditLog>();
             var currentUserId = HttpContext.Current?.User?.Identity?.GetUserId() ?? "System";
 
-            foreach (var entry in ChangeTracker.Entries()
-                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted))
+            // Track changes for all entities
+            var entries = ChangeTracker.Entries()
+                .Where(e => e.State == EntityState.Added ||
+                            e.State == EntityState.Modified ||
+                            e.State == EntityState.Deleted);
+
+            if (!entries.Any())
             {
+                Debug.WriteLine($"No entities found in ChangeTracker for auditing at {DateTime.UtcNow}");
+            }
+
+            foreach (var entry in entries)
+            {
+                var entity = entry.Entity;
+                var action = entry.State.ToString();
+                var entityName = entity.GetType().Name;
+                var entityId = GetEntityId(entry);
+                var details = GetDetails(entry);
+
                 var auditLog = new AuditLog
                 {
                     UserId = currentUserId,
-                    Action = entry.State.ToString(),
-                    EntityName = entry.Entity.GetType().Name,
-                    EntityId = GetEntityId(entry.Entity),
+                    Action = action,
+                    EntityName = entityName,
+                    EntityId = entityId,
                     Timestamp = DateTime.UtcNow,
-                    Details = GetDetails(entry)
+                    Details = details
                 };
                 auditLogs.Add(auditLog);
+
+                Debug.WriteLine($"Audit log created: Entity={entityName}, Action={action}, EntityId={entityId}, Timestamp={DateTime.UtcNow}");
             }
 
+            // Add audit logs to the context before saving
             if (auditLogs.Any())
             {
-                Debug.WriteLine($"Adding {auditLogs.Count} audit logs at {DateTime.UtcNow}");
-            }
-
-            int result = base.SaveChanges();
-
-            if (auditLogs.Any())
-            {
+                Debug.WriteLine($"Preparing to save {auditLogs.Count} audit logs at {DateTime.UtcNow}");
                 AuditLogs.AddRange(auditLogs);
-                base.SaveChanges();
-                Debug.WriteLine("Audit logs saved successfully");
             }
 
-            return result;
+            try
+            {
+                // Save both entity changes and audit logs in a single transaction
+                int result = base.SaveChanges();
+                Debug.WriteLine("All changes (entities and audit logs) saved successfully");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error saving changes: {ex.Message}, InnerException: {ex.InnerException?.Message}");
+                throw; // Re-throw to ensure the caller handles the error
+            }
         }
 
-        private string GetEntityId(object entity)
+        private string GetEntityId(DbEntityEntry entry)
         {
+            var entity = entry.Entity;
             var property = entity.GetType().GetProperty("Id");
-            return property?.GetValue(entity)?.ToString() ?? "Unknown";
+            if (property != null)
+            {
+                var value = property.GetValue(entity);
+                return value?.ToString() ?? "Unknown";
+            }
+            return "Unknown";
         }
 
         private string GetDetails(DbEntityEntry entry)
         {
-            if (entry.Entity is Sale)
+            if (entry.State == EntityState.Added)
             {
-                var sale = entry.Entity as Sale;
-                return JsonConvert.SerializeObject(new
-                {
-                    sale.SaleDate,
-                    sale.Price
-                });
-            }
-            else if (entry.Entity is Purchase)
-            {
-                var purchase = entry.Entity as Purchase;
-                return JsonConvert.SerializeObject(new
-                {
-                    purchase.PurchaseDate,
-                    purchase.MedicationID
-                });
-            }
-            else if (entry.State == EntityState.Added || entry.State == EntityState.Deleted)
-            {
-                return JsonConvert.SerializeObject(entry.Entity);
+                return JsonConvert.SerializeObject(entry.CurrentValues.ToObject());
             }
             else if (entry.State == EntityState.Modified)
             {
@@ -113,12 +129,11 @@ namespace PharmMgtSys.Models
                 var current = entry.CurrentValues.ToObject();
                 return $"Original: {JsonConvert.SerializeObject(original)}, Current: {JsonConvert.SerializeObject(current)}";
             }
-            return null;
+            else if (entry.State == EntityState.Deleted)
+            {
+                return "Entity Deleted";
+            }
+            return "No details available";
         }
-
-        public DbSet<Medication> Medications { get; set; }
-        public DbSet<Purchase> Purchases { get; set; }
-        public DbSet<Sale> Sales { get; set; }
-        public DbSet<Notification> Notifications { get; set; }
     }
 }

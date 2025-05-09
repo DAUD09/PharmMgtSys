@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PharmMgtSys.Models
 {
-	public class Sale
+	public class Sale 
 	{
 
 		[Key]

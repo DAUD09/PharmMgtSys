@@ -9,6 +9,7 @@ using Microsoft.AspNet.Identity.Owin;
 using Microsoft.AspNet.Identity.EntityFramework;
 using PharmMgtSys.Models;
 using System.Data.Entity;
+using System.Diagnostics;
 
 namespace PharmMgtSys.Controllers
 {
@@ -63,23 +64,25 @@ namespace PharmMgtSys.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetUsers()
+        public async Task<ActionResult> GetUsers(int skip = 0, int take = 10)
         {
-            var users = await UserManager.Users.ToListAsync();
+            var users = await UserManager.Users.OrderBy(u => u.UserName).Skip(skip).Take(take).ToListAsync();
+            var totalCount = await UserManager.Users.CountAsync();
             var userRoles = new List<object>();
             foreach (var user in users)
             {
                 var roles = await UserManager.GetRolesAsync(user.Id);
                 userRoles.Add(new
                 {
-                    user.Id,
+                    Id = user.Id,
                     user.UserName,
                     user.Email,
                     user.IsActive,
                     Roles = roles
                 });
             }
-            return Json(userRoles, JsonRequestBehavior.AllowGet);
+            Debug.WriteLine($"GetUsers: Returning JSON with {userRoles.Count} users, totalCount: {totalCount}");
+            return Json(new { data = userRoles, totalCount = totalCount }, JsonRequestBehavior.AllowGet);
         }
 
         [HttpPost]
@@ -100,60 +103,104 @@ namespace PharmMgtSys.Controllers
                     }
                     return Json(new { success = true });
                 }
+                Debug.WriteLine("Create failed: " + string.Join(", ", result.Errors));
                 return Json(new { success = false, errors = result.Errors });
             }
-            return Json(new { success = false, errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
+            var modelErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+            Debug.WriteLine("Create model invalid: " + string.Join(", ", modelErrors));
+            return Json(new { success = false, errors = modelErrors });
         }
 
         [HttpPut]
         public async Task<ActionResult> Update(string id, [Bind(Include = "Email,IsActive,Roles")] UpdateUserViewModel model)
         {
-            var user = await UserManager.FindByIdAsync(id);
-            if (user == null)
+            Debug.WriteLine($"Update called for user ID: {id}, Email: {model?.Email}, IsActive: {model?.IsActive}, Roles: {string.Join(", ", model?.Roles ?? new List<string>())}");
+            if (string.IsNullOrEmpty(id))
             {
-                return HttpNotFound();
+                Debug.WriteLine("Update failed: ID is null or empty");
+                return Json(new { success = false, errors = new[] { "User ID is required." } });
             }
 
-            user.Email = model.Email;
-            user.UserName = model.Email;
-            user.IsActive = model.IsActive;
-
-            var result = await UserManager.UpdateAsync(user);
-            if (!result.Succeeded)
+            if (ModelState.IsValid)
             {
-                return Json(new { success = false, errors = result.Errors });
+                var user = await UserManager.FindByIdAsync(id);
+                if (user == null)
+                {
+                    Debug.WriteLine($"Update failed: User not found for ID: {id}");
+                    return Json(new { success = false, errors = new[] { "User not found." } });
+                }
+
+                user.Email = model.Email ?? user.Email;
+                user.UserName = model.Email ?? user.UserName;
+                user.IsActive = model.IsActive;
+
+                var result = await UserManager.UpdateAsync(user);
+                if (!result.Succeeded)
+                {
+                    Debug.WriteLine("Update failed: " + string.Join(", ", result.Errors));
+                    return Json(new { success = false, errors = result.Errors });
+                }
+
+                if (model.Roles != null)
+                {
+                    var currentRoles = await UserManager.GetRolesAsync(id);
+                    var rolesToRemove = currentRoles.Except(model.Roles).ToList();
+                    var rolesToAdd = model.Roles.Except(currentRoles).ToList();
+
+                    foreach (var role in rolesToRemove)
+                    {
+                        var removeResult = await UserManager.RemoveFromRoleAsync(id, role);
+                        if (!removeResult.Succeeded)
+                        {
+                            Debug.WriteLine($"Failed to remove role {role}: {string.Join(", ", removeResult.Errors)}");
+                            return Json(new { success = false, errors = removeResult.Errors });
+                        }
+                    }
+                    foreach (var role in rolesToAdd)
+                    {
+                        var addResult = await UserManager.AddToRoleAsync(id, role);
+                        if (!addResult.Succeeded)
+                        {
+                            Debug.WriteLine($"Failed to add role {role}: {string.Join(", ", addResult.Errors)}");
+                            return Json(new { success = false, errors = addResult.Errors });
+                        }
+                    }
+                }
+
+                Debug.WriteLine("Update succeeded for user ID: " + id);
+                return Json(new { success = true });
             }
 
-            var currentRoles = await UserManager.GetRolesAsync(id);
-            var rolesToRemove = currentRoles.Except(model.Roles ?? new List<string>()).ToList();
-            var rolesToAdd = (model.Roles ?? new List<string>()).Except(currentRoles).ToList();
-
-            foreach (var role in rolesToRemove)
-            {
-                await UserManager.RemoveFromRoleAsync(id, role);
-            }
-            foreach (var role in rolesToAdd)
-            {
-                await UserManager.AddToRoleAsync(id, role);
-            }
-
-            return Json(new { success = true });
+            var modelErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+            Debug.WriteLine("Update model invalid: " + string.Join(", ", modelErrors));
+            return Json(new { success = false, errors = modelErrors });
         }
 
         [HttpDelete]
         public async Task<ActionResult> Delete(string id)
         {
+            Debug.WriteLine($"Delete called for user ID: {id}");
+            if (string.IsNullOrEmpty(id))
+            {
+                Debug.WriteLine("Delete failed: ID is null or empty");
+                return Json(new { success = false, errors = new[] { "User ID is required." } });
+            }
+
             var user = await UserManager.FindByIdAsync(id);
             if (user == null)
             {
-                return HttpNotFound();
+                Debug.WriteLine($"Delete failed: User not found for ID: {id}");
+                return Json(new { success = false, errors = new[] { "User not found." } });
             }
 
             var result = await UserManager.DeleteAsync(user);
             if (result.Succeeded)
             {
+                Debug.WriteLine("Delete succeeded for user ID: " + id);
                 return Json(new { success = true });
             }
+
+            Debug.WriteLine("Delete failed: " + string.Join(", ", result.Errors));
             return Json(new { success = false, errors = result.Errors });
         }
 

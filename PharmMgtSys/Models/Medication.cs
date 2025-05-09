@@ -2,8 +2,8 @@
 
 namespace PharmMgtSys.Models
 {
-	public class Medication
-	{
+	public class Medication 
+    {
 
 		[Key]
 		public int MedicationID { get; set; }

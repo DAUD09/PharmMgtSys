@@ -11,9 +11,6 @@
     .DataSource(ds => ds.Mvc()
         .Controller("Users")
         .LoadAction("GetUsers")
-        .InsertAction("Create")
-        .UpdateAction("Update")
-        .DeleteAction("Delete")
         .Key("Id")
         .LoadParams(new { _ = DateTime.Now.Ticks }) // Prevent caching
     )
@@ -21,7 +18,7 @@
     .Sorting(d => d.Mode(GridSortingMode.Single))
     .SearchPanel(sp => sp.Visible(true).Width(240).Placeholder("Search..."))
     .ShowBorders(true)
-    .FocusedRowEnabled(true)
+    //.FocusedRowEnabled(true)
     .ShowColumnLines(true)
     .Columns(columns =>
     {
@@ -29,7 +26,9 @@
         columns.Add().DataField("UserName").Caption("Username");
         columns.Add().DataField("Email");
         columns.Add().DataField("IsActive").Caption("Active");
-        columns.Add().DataField("Roles").Caption("Roles").CalculateCellValue("function(data) { return data.Roles.join(', '); }").AllowEditing(false);
+        columns.Add().DataField("Roles").Caption("Roles")
+            .CalculateCellValue("function(data) { return data.Roles.join(', '); }")
+            .AllowEditing(false);
     })
     .Editing(e => e
         .AllowAdding(false)
@@ -37,28 +36,100 @@
         .AllowDeleting(true)
         .Mode(GridEditMode.Popup)
         .Popup(p => p
-            .Title("User Info")
+            .Title("Edit User")
             .ShowTitle(true)
-            .Width(700)
-            .Height(525)
+            .Width(500)
+            .Height(300)
         )
         .Form(f => f.Items(items =>
         {
-            items.AddSimple().DataField("Email");
-            items.AddSimple().DataField("IsActive");
-            items.AddSimple().DataField("Roles").Editor(ed => ed.TagBox()
-                .DataSource(ds => ds.Mvc().Controller("Users").LoadAction("GetRoles"))
-                .ValueExpr("Name")
-                .DisplayExpr("Name")
-            );
-            items.AddSimple()
-                .Editor(ed => ed.TextBox()
-                    .Name("Password")
-                    .Mode(DevExtreme.AspNet.Mvc.TextBoxMode.Password)
-                )
-                .Label(l => l.Text("Password"));
+            items.AddSimple().DataField("Id").Visible(false)
+                .Editor(ed => ed.TextBox().Name("Id").ID("userId"));
+            items.AddSimple().DataField("Email")
+                .Editor(ed => ed.TextBox().ReadOnly(false).Name("Email").ID("userEmail"))
+                .Label(l => l.Text("Email"))
+                .ValidationRules(v => v.AddRequired().Message("Email is required"));
+            items.AddSimple().DataField("IsActive")
+                .Editor(ed => ed.CheckBox().Text("Active").Name("IsActive").ID("userIsActive"))
+                .Label(l => l.Text("Active"));
         }))
     )
-    .OnRowInserting("function(e) { e.data.UserName = e.data.Email; }")
-    .OnEditorPreparing("function(e) { if (e.dataField === 'Password') { e.editorOptions.visible = !e.row || !e.row.data.Id; } }")
+    .OnInitialized("function(e) { console.log('Grid initialized'); }")
+    .OnRowUpdating("function(e) { console.log('Updating row with data:', e.newData, 'Key:', e.key); }")
+    .OnRowUpdated("function(e) { console.log('Row updated:', e.data); }")
+    .OnRowRemoving("function(e) { console.log('Deleting row with key:', e.key); }")
+    .OnDataErrorOccurred("function(e) { console.error('Data error:', e.error); DevExpress.ui.notify('Error: ' + (e.error.message || 'Unknown error'), 'error', 5000); }")
 )
+
+<script>
+    $(document).ready(function () {
+        var grid = $("#userGrid").dxDataGrid("instance");
+        if (!grid) {
+            console.error("DataGrid instance not found - check configuration.");
+            return;
+        }
+        console.log("DataGrid instance loaded successfully.");
+
+        // Override the data source to handle totalCount and map key to id
+        grid.option("dataSource", {
+            load: function (loadOptions) {
+                return $.ajax({
+                    url: "/Users/GetUsers",
+                    data: loadOptions,
+                    type: "GET",
+                    success: function (result) {
+                        console.log("Load data:", result);
+                        return {
+                            data: result.data,
+                            totalCount: result.totalCount
+                        };
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Load error:", status, error);
+                    }
+                });
+            },
+            update: function (key, values) {
+                // Ensure key is a string
+                var userId = typeof key === 'object' ? key.Id : key;
+                return $.ajax({
+                    url: "/Users/Update?id=" + encodeURIComponent(userId),
+                    data: values,
+                    type: "PUT",
+                    beforeSend: function (xhr, settings) {
+                        console.log("Update request:", settings.url, settings.data);
+                    },
+                    success: function (response) {
+                        console.log("Update response:", response);
+                        if (!response.success) {
+                            throw new Error(response.errors.join(", "));
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Update error:", status, error);
+                    }
+                });
+            },
+            remove: function (key) {
+                // Ensure key is a string
+                var userId = typeof key === 'object' ? key.Id : key;
+                return $.ajax({
+                    url: "/Users/Delete?id=" + encodeURIComponent(userId),
+                    type: "DELETE",
+                    beforeSend: function (xhr, settings) {
+                        console.log("Delete request:", settings.url);
+                    },
+                    success: function (response) {
+                        console.log("Delete response:", response);
+                        if (!response.success) {
+                            throw new Error(response.errors.join(", "));
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Delete error:", status, error);
+                    }
+                });
+            }
+        });
+    });
+</script>

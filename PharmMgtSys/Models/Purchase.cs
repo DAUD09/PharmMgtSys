@@ -4,8 +4,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PharmMgtSys.Models
 {
-	public class Purchase
-	{
+	public class Purchase 
+    {
 
 		[Key]
 		public int PurchaseID { get; set; }
