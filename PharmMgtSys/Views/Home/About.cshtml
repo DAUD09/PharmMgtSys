@@ -3,7 +3,7 @@
 }
 <main aria-labelledby="title">
     <h2 id="title">@ViewBag.Title.</h2>
-    <h3>@ViewBag.Message</h3>
+    @*<h3>@ViewBag.Message</h3>*@
 
     <h4>Overview</h4>
     <p>
@@ -11,15 +11,24 @@
     </p><br />
         <strong>Key Features</strong>
         <p>
-            Purchase Management: Record new stock purchases; inventory quantities update automatically.
-            Sales Processing: Log sales transactions (prescriptions and OTC items); inventory is adjusted accordingly.
-            Dashboard: Interactive sales bar chart to visualize revenue over time.
-            Reporting: Generate inventory reports (stock levels, expirations) and transaction reports on demand.
-            User & Role Management: Support for multiple user roles (Administrator, Pharmacist, Cashier) with appropriate permissions.
-            Technologies Used
-            Backend Framework: ASP.NET MVC with C# (built in Visual Studio Community).
-            Frontend Libraries: DevExtreme UI components (JavaScript/HTML/CSS) for responsive interface.
-            Database: MySQL for storing products, inventory, and transactions.
-            Other: Git for version control, jQuery (as required by DevExtreme), and standard web technologies (Bootstrap, etc.).
+            <ul>
+                <li>Purchase Management: Record new stock purchases; inventory quantities update automatically.</li>
+                <li>Sales Processing: Log sales transactions (prescriptions and OTC items); inventory is adjusted accordingly.</li>
+                <li>Interactive sales bar chart to visualize revenue over time.</li>
+                <li>Generate inventory reports (stock levels, expirations) and transaction reports on demand.</li>
+                <li>User & Role Management: Support for multiple user roles (Administrator, Pharmacist, Cashier) with appropriate permissions.</li>
+
+            </ul>
+            <br />
+            <strong>Technologies Used</strong>
+            <ul>
+                <li>Backend Framework: ASP.NET MVC with C# (built in Visual Studio Community).</li>
+                <li>Frontend Libraries: DevExtreme UI components (JavaScript/HTML/CSS) for responsive interface.</li>
+                <li>MySQL for storing products, inventory, and transactions.</li> 
+                <li>Git for version control, jQuery (as required by DevExtreme), and standard web technologies (Bootstrap, etc.).</li> 
+
+            </ul>
+            
+
         </p>
 </main>
