@@ -30,8 +30,7 @@ namespace PharmMgtSys.Models
     [DbConfigurationType(typeof(MySqlEFConfiguration))]
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
-        public ApplicationDbContext()
-            : base("MysqlData", throwIfV1Schema: false)
+        public ApplicationDbContext() : base("MysqlData", throwIfV1Schema: false)
         {
         }
 
@@ -48,18 +47,32 @@ namespace PharmMgtSys.Models
 
         public override int SaveChanges()
         {
+            return SaveChangesAsync().Result; // Delegate to async for consistency
+        }
+
+        public override async Task<int> SaveChangesAsync()
+        {
             var auditLogs = new List<AuditLog>();
             var currentUserId = HttpContext.Current?.User?.Identity?.GetUserId() ?? "System";
 
-            // Track changes for all entities
+            // Get all changed entities
             var entries = ChangeTracker.Entries()
                 .Where(e => e.State == EntityState.Added ||
                             e.State == EntityState.Modified ||
-                            e.State == EntityState.Deleted);
+                            e.State == EntityState.Deleted)
+                .ToList();
 
             if (!entries.Any())
             {
                 Debug.WriteLine($"No entities found in ChangeTracker for auditing at {DateTime.UtcNow}");
+            }
+            else
+            {
+                Debug.WriteLine($"Found {entries.Count} entities in ChangeTracker at {DateTime.UtcNow}");
+                foreach (var entry in entries)
+                {
+                    Debug.WriteLine($"Entity: {entry.Entity.GetType().Name}, State: {entry.State}");
+                }
             }
 
             foreach (var entry in entries)
@@ -84,7 +97,6 @@ namespace PharmMgtSys.Models
                 Debug.WriteLine($"Audit log created: Entity={entityName}, Action={action}, EntityId={entityId}, Timestamp={DateTime.UtcNow}");
             }
 
-            // Add audit logs to the context before saving
             if (auditLogs.Any())
             {
                 Debug.WriteLine($"Preparing to save {auditLogs.Count} audit logs at {DateTime.UtcNow}");
@@ -93,15 +105,14 @@ namespace PharmMgtSys.Models
 
             try
             {
-                // Save both entity changes and audit logs in a single transaction
-                int result = base.SaveChanges();
+                int result = await base.SaveChangesAsync();
                 Debug.WriteLine("All changes (entities and audit logs) saved successfully");
                 return result;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error saving changes: {ex.Message}, InnerException: {ex.InnerException?.Message}");
-                throw; // Re-throw to ensure the caller handles the error
+                throw;
             }
         }
 
@@ -109,30 +120,17 @@ namespace PharmMgtSys.Models
         {
             var entity = entry.Entity;
             var property = entity.GetType().GetProperty("Id");
-            if (property != null)
-            {
-                var value = property.GetValue(entity);
-                return value?.ToString() ?? "Unknown";
-            }
-            return "Unknown";
+            return property?.GetValue(entity)?.ToString() ?? "Unknown";
         }
 
         private string GetDetails(DbEntityEntry entry)
         {
             if (entry.State == EntityState.Added)
-            {
                 return JsonConvert.SerializeObject(entry.CurrentValues.ToObject());
-            }
-            else if (entry.State == EntityState.Modified)
-            {
-                var original = entry.OriginalValues.ToObject();
-                var current = entry.CurrentValues.ToObject();
-                return $"Original: {JsonConvert.SerializeObject(original)}, Current: {JsonConvert.SerializeObject(current)}";
-            }
-            else if (entry.State == EntityState.Deleted)
-            {
+            if (entry.State == EntityState.Modified)
+                return $"Original: {JsonConvert.SerializeObject(entry.OriginalValues.ToObject())}, Current: {JsonConvert.SerializeObject(entry.CurrentValues.ToObject())}";
+            if (entry.State == EntityState.Deleted)
                 return "Entity Deleted";
-            }
             return "No details available";
         }
     }
